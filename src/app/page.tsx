@@ -14,7 +14,7 @@ export default async function HomePage() {
   if (books.length === 0) {
     return (
       <div className="shell flex min-h-[70svh] flex-col justify-center py-24">
-        <span className="label">Acervo MBA USP/Esalq</span>
+        <span className="label">Silo · Acervo MBA USP/Esalq</span>
         <h1 className="display mt-4 max-w-2xl text-[clamp(2rem,5vw,3.5rem)]">
           A estante ainda está vazia.
         </h1>
@@ -143,8 +143,8 @@ export default async function HomePage() {
             Tem material que ajudou você? Coloque na estante.
           </h2>
           <p className="prose-sm mt-4 max-w-md">
-            Suba o PDF, descreva em trinta segundos e o arquivo passa a valer para
-            todas as turmas.
+            Suba o PDF, descreva em trinta segundos e o arquivo entra no Silo
+            valendo para todas as turmas.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link href="/enviar" className="btn btn-solid">

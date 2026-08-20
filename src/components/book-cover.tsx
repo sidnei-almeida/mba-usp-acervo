@@ -114,7 +114,7 @@ export function BookCover({
               className="shrink-0 uppercase text-white/45"
               style={{ fontSize: "2.4cqw", letterSpacing: "0.2em" }}
             >
-              MBA USP/Esalq
+              Silo
             </span>
           </div>
         </div>

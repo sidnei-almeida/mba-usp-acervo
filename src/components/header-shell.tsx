@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
-import { EsalqMark } from "@/components/esalq-mark";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import { cx } from "@/lib/utils";
 
 const NAV = [
@@ -42,7 +42,7 @@ export function HeaderShell({ user }: { user: { name: string } | null }) {
       <div className="shell flex h-[var(--header)] items-center justify-between gap-6">
         <div className="flex items-center gap-8">
           <Link href="/" aria-label="Início">
-            <EsalqMark className="transition-opacity hover:opacity-70" />
+            <BrandLockup className="transition-opacity hover:opacity-70" />
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex">

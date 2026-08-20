@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sobre",
-  description: "Como funciona o acervo digital do MBA USP/Esalq.",
+  description: "Como funciona o Silo, o acervo digital do MBA USP/Esalq.",
 };
 
 const STEPS = [
@@ -35,8 +35,8 @@ export default function AboutPage() {
         </h1>
         <p className="prose-sm mt-5 max-w-xl">
           Material de MBA circula por grupos de mensagem, e-mail e pen drive até
-          desaparecer. Este acervo existe para dar endereço fixo a esse conteúdo:
-          um lugar rápido e pesquisável, mantido pelos próprios alunos do MBA
+          desaparecer. O Silo existe para dar endereço fixo a esse conteúdo: um
+          lugar rápido e pesquisável, mantido pelos próprios alunos do MBA
           USP/Esalq.
         </p>
       </section>
@@ -57,7 +57,7 @@ export default function AboutPage() {
         </h2>
         <div className="prose-sm max-w-xl space-y-3">
           <p>
-            O acervo é mantido por alunos, para uso educacional entre colegas de
+            O Silo é mantido por alunos, para uso educacional entre colegas de
             turma. Envie apenas material que você tem direito de compartilhar:
             produção própria, apostilas liberadas, obras de domínio público ou com
             licença aberta.
