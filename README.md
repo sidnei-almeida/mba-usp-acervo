@@ -120,6 +120,12 @@ src/lib/
   (`/acervo?vista=indice`) — linhas numeradas com a capa aparecendo ao lado do
   cursor.
 - **Limite**: 200 MB por arquivo.
+- **Compactação**: depois de publicado, o PDF passa por uma pipeline em camadas
+  — Ghostscript (reamostra imagens para 170 dpi e faz subset das fontes), qpdf
+  (recompressão sem perda) e, se nenhum binário existir na máquina, uma
+  regravação estrutural com `pdf-lib`. Vence o menor resultado que ainda abre e
+  mantém a contagem de páginas; se ninguém melhorar pelo menos 3%, o original
+  fica. Em PDF de digitalização a redução costuma passar de 70%.
 
 ## Scripts
 
@@ -131,6 +137,7 @@ src/lib/
 | `npm run lint` | ESLint |
 | `npm run db` | mostra tabelas e contagens do Postgres |
 | `npm run capas -- --usuario X --senha Y` | baixa e guarda capas que faltam |
+| `npm run pdfs -- --usuario X --senha Y` | compacta os PDFs ainda não otimizados |
 
 O `postinstall` copia o worker do pdf.js para `public/`.
 
