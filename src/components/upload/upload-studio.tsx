@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { upload as blobUpload } from "@vercel/blob/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, UploadCloud, X } from "lucide-react";
 import type { CoverCandidate } from "@/lib/covers";
@@ -47,7 +48,21 @@ function titleFromFileName(name: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function put(url: string, body: Blob, contentType: string, onProgress?: (r: number) => void) {
+type UploadSlot = {
+  draftId: string;
+  key: string;
+  contentType: string;
+  mode: "blob" | "put";
+  uploadUrl?: string;
+  handleUploadUrl?: string;
+};
+
+function putWithProgress(
+  url: string,
+  body: Blob,
+  contentType: string,
+  onProgress?: (ratio: number) => void,
+) {
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("PUT", url);
@@ -62,6 +77,40 @@ function put(url: string, body: Blob, contentType: string, onProgress?: (r: numb
     request.onerror = () => reject(new Error("Falha de rede durante o upload."));
     request.send(body);
   });
+}
+
+/** Asks the server where this file should go, then sends it that way. */
+async function sendFile(
+  payload: Record<string, unknown>,
+  body: Blob,
+  contentType: string,
+  onProgress?: (ratio: number) => void,
+) {
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(((await response.json()) as { error?: string }).error ?? "Upload negado.");
+  }
+
+  const slot = (await response.json()) as UploadSlot;
+
+  if (slot.mode === "blob") {
+    await blobUpload(slot.key, body, {
+      access: "public",
+      contentType,
+      handleUploadUrl: slot.handleUploadUrl ?? "/api/upload/blob",
+      // Big files are cut into parts so a dropped connection costs one part.
+      multipart: body.size > 20 * 1024 * 1024,
+      onUploadProgress: ({ percentage }) => onProgress?.(percentage / 100),
+    });
+  } else {
+    await putWithProgress(slot.uploadUrl!, body, contentType, onProgress);
+  }
+
+  return slot;
 }
 
 export function UploadStudio({ disciplines }: { disciplines: string[] }) {
@@ -164,41 +213,38 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     setProgress(0);
 
     try {
-      const pdfSlot = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const slot = await sendFile(
+        {
           target: "pdf",
           fileName: file.name,
           contentType: "application/pdf",
           size: file.size,
-        }),
-      });
-      if (!pdfSlot.ok) throw new Error((await pdfSlot.json()).error ?? "Upload negado.");
-      const slot = (await pdfSlot.json()) as { draftId: string; key: string; uploadUrl: string };
-
-      await put(slot.uploadUrl, file, "application/pdf", (ratio) => setProgress(ratio * 0.9));
+        },
+        file,
+        "application/pdf",
+        (ratio) => setProgress(ratio * 0.9),
+      );
 
       // A remote cover means nothing extra needs storing.
       let coverKey: string | undefined;
       let coverSource: CoverSource = chosenCover ? chosenCover.provider : "gerada";
 
       if (!chosenCover && coverBlob) {
-        const coverSlot = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            target: "capa",
-            draftId: slot.draftId,
-            contentType: "image/jpeg",
-            size: coverBlob.size,
-          }),
-        });
-        if (coverSlot.ok) {
-          const cover = (await coverSlot.json()) as { key: string; uploadUrl: string };
-          await put(cover.uploadUrl, coverBlob, "image/jpeg");
+        try {
+          const cover = await sendFile(
+            {
+              target: "capa",
+              draftId: slot.draftId,
+              contentType: "image/jpeg",
+              size: coverBlob.size,
+            },
+            coverBlob,
+            "image/jpeg",
+          );
           coverKey = cover.key;
           coverSource = "pdf";
+        } catch {
+          // A cover is optional; the typographic one takes over.
         }
       }
       setProgress(0.96);
