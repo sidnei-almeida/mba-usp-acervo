@@ -1,4 +1,4 @@
-# Acervo MBA USP/Esalq
+# Silo — Acervo MBA USP/Esalq
 
 Biblioteca digital para alunos do MBA USP/Esalq compartilharem livros, apostilas,
 casos e artigos em PDF. Interface em preto absoluto, tipografia editorial e
@@ -74,6 +74,12 @@ sessão vive em cookie assinado por `SESSION_SECRET`. **A primeira conta criada
 vira administradora.** Consultar o acervo não exige conta; enviar material sim,
 e remover um título é permitido a quem o enviou ou a um administrador.
 
+## Marca
+
+O kit de marca vive em `/marca`: letreiro, glifo, respiro, paleta, tipografia e
+usos. Os arquivos SVG ficam em `public/marca/`, e o glifo também é o favicon
+(`src/app/icon.svg`).
+
 ## Estrutura
 
 ```
@@ -84,6 +90,7 @@ src/app/                  páginas e rotas de API
   livro/[slug]/           ficha do título e leitor embutido
   enviar/                 sala de envio (dropzone + formulário)
   entrar/, criar-conta/   acesso e cadastro
+  marca/                  kit de marca
   api/                    contas, sessão, upload, catálogo e entrega de arquivos
 src/components/           header, trilhos, capas geradas, formulário
 src/lib/

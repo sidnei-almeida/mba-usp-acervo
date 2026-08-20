@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { EsalqMark } from "@/components/esalq-mark";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 
 const COLUMNS = [
   {
@@ -17,6 +17,7 @@ const COLUMNS = [
       { href: "/criar-conta", label: "Criar conta" },
       { href: "/sobre", label: "Como funciona" },
       { href: "/sobre#direitos", label: "Direitos autorais" },
+      { href: "/marca", label: "Marca" },
     ],
   },
 ];
@@ -26,10 +27,10 @@ export function SiteFooter() {
     <footer className="mt-16 border-t border-line">
       <div className="shell grid gap-8 py-10 md:grid-cols-[1.6fr_1fr_1fr]">
         <div className="max-w-xs">
-          <EsalqMark />
+          <BrandLockup size="md" />
           <p className="prose-sm mt-4">
-            Biblioteca mantida por alunos e ex-alunos do MBA USP/Esalq. Um lugar
-            só para o material que circula entre turmas.
+            Silo é a biblioteca mantida por alunos e ex-alunos do MBA USP/Esalq.
+            Um lugar só para o material que circula entre turmas.
           </p>
         </div>
 
