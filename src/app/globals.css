@@ -212,7 +212,6 @@ body {
     scroll-snap-type: x proximity;
     scroll-padding-inline: 1rem;
     scrollbar-width: none;
-    scroll-behavior: smooth;
   }
 
   @media (min-width: 768px) {
