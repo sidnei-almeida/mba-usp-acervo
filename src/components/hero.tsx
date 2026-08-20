@@ -45,7 +45,7 @@ export function Hero({ book, total }: { book: Book; total: number }) {
           </span>
         </div>
 
-        <div className="grid gap-8 py-10 md:py-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-16">
+        <div className="grid gap-8 py-10 md:py-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center lg:gap-16">
           <div className="rise flex flex-col">
             <h1 className="display max-w-[15ch] text-[clamp(2.25rem,4.6vw,3.75rem)]">
               {book.title}
@@ -63,7 +63,7 @@ export function Hero({ book, total }: { book: Book; total: number }) {
               <p className="prose-sm mt-5 max-w-md">{book.description}</p>
             ) : null}
 
-            <div className="mt-auto flex flex-wrap items-center gap-2 pt-8">
+            <div className="mt-8 flex flex-wrap items-center gap-2">
               <Link href={`/livro/${book.slug}/ler`} className="btn btn-solid">
                 <BookOpen className="h-3.5 w-3.5" strokeWidth={1.6} />
                 Ler agora

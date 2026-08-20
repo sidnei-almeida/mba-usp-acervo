@@ -103,9 +103,14 @@ src/lib/
 
 ## Detalhes de implementação
 
-- **Capas**: quem envia raramente tem arte. A primeira página do PDF é
-  renderizada no navegador (pdf.js) e vira a capa; sem ela, entra uma capa
-  tipográfica gerada com cor determinística por título.
+- **Capas**: a busca consulta Open Library e Google Books (por ISBN ou
+  título+autor, em português e inglês) e guarda apenas a URL — nada de imagem no
+  R2. Sem resultado, entra a primeira página do PDF renderizada no navegador
+  (pdf.js) e, por último, uma capa tipográfica gerada com cor determinística.
+  Toda capa remota é servida pelo proxy `/api/capa`, que valida a origem e
+  guarda em cache; se ainda assim falhar, o componente cai na capa gerada.
+  O acesso anônimo ao Google Books tem cota diária baixa — defina
+  `GOOGLE_BOOKS_API_KEY` para melhorar a cobertura de edições brasileiras.
 - **Leitor**: `/livro/<slug>/ler` embute o PDF em tela cheia com cabeçalho
   próprio.
 - **Índice**: além da grade de capas, o acervo tem uma vista de índice

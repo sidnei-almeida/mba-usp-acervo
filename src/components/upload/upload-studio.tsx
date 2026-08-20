@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, UploadCloud, X } from "lucide-react";
-import type { CoverCandidate } from "@/lib/openlibrary";
+import type { CoverCandidate } from "@/lib/covers";
 import { readPdfPreview } from "@/lib/pdf-client";
 import { KINDS, KIND_LABEL, type CoverSource, type Kind } from "@/lib/types";
 import { cx, formatBytes } from "@/lib/utils";
@@ -87,10 +87,11 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
   const set = (key: keyof Form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
 
-  // Open Library lookup follows what is typed, debounced.
+  // Cover lookup follows what is typed, debounced, in both catalogues.
   useEffect(() => {
     const title = form.title.trim();
     const isbn = form.isbn.trim();
+    const language = form.language;
     const controller = new AbortController();
 
     const timer = setTimeout(async () => {
@@ -103,6 +104,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
         const params = new URLSearchParams({ titulo: title });
         if (form.authors.trim()) params.set("autor", form.authors.split(/[,;]/)[0].trim());
         if (isbn) params.set("isbn", isbn);
+        params.set("idioma", language.toLowerCase().startsWith("ing") ? "eng" : "por");
 
         const response = await fetch(`/api/capas?${params}`, { signal: controller.signal });
         if (!response.ok) return;
@@ -119,7 +121,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [form.title, form.authors, form.isbn]);
+  }, [form.title, form.authors, form.isbn, form.language]);
 
   const accept = useCallback(async (candidate: File) => {
     if (candidate.type !== "application/pdf") {
@@ -179,7 +181,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
 
       // A remote cover means nothing extra needs storing.
       let coverKey: string | undefined;
-      let coverSource: CoverSource = chosenCover ? "openlibrary" : "gerada";
+      let coverSource: CoverSource = chosenCover ? chosenCover.provider : "gerada";
 
       if (!chosenCover && coverBlob) {
         const coverSlot = await fetch("/api/upload", {
@@ -253,7 +255,9 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     file && form.title.trim() && form.authors.trim() && form.discipline.trim(),
   );
 
-  const preview = chosenCover?.coverUrl ?? coverUrl;
+  const preview = chosenCover
+    ? `/api/capa?url=${encodeURIComponent(chosenCover.coverUrl)}`
+    : coverUrl;
 
   return (
     <form
@@ -372,20 +376,20 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
 
                 {candidates.map((candidate) => (
                   <button
-                    key={candidate.key + candidate.coverId}
+                    key={candidate.id}
                     type="button"
                     onClick={() => setChosenCover(candidate)}
                     title={`${candidate.title}${candidate.year ? ` · ${candidate.year}` : ""}`}
                     className={cx(
                       "h-[3.75rem] w-10 shrink-0 overflow-hidden border transition-colors",
-                      chosenCover?.coverId === candidate.coverId
+                      chosenCover?.id === candidate.id
                         ? "border-bone"
                         : "border-line hover:border-white/40",
                     )}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={candidate.thumbUrl}
+                      src={`/api/capa?url=${encodeURIComponent(candidate.thumbUrl)}`}
                       alt=""
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -396,7 +400,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
 
               <p className="mt-1.5 text-[0.5625rem] uppercase tracking-[0.14em] text-dim">
                 {chosenCover
-                  ? "Capa da Open Library · nada é salvo no R2"
+                  ? `Capa via ${chosenCover.provider === "googlebooks" ? "Google Books" : "Open Library"} · nada é salvo no R2`
                   : coverUrl
                     ? "Primeira página do PDF"
                     : "Capa tipográfica gerada"}
