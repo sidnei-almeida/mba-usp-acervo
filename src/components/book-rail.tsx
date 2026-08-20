@@ -7,8 +7,36 @@ import { BookCard } from "@/components/book-card";
 import type { Book } from "@/lib/types";
 import { cx } from "@/lib/utils";
 
-const STEP_MS = 2600;
-const RESUME_MS = 7000;
+const STEP_MS = 6000;
+const RESUME_MS = 9000;
+const GLIDE_MS = 1500;
+
+/** Own easing: the browser's smooth scroll is too brisk for an idle carousel. */
+function glide(node: HTMLElement, target: number, duration = GLIDE_MS) {
+  const start = node.scrollLeft;
+  const distance = target - start;
+  if (Math.abs(distance) < 1) return;
+
+  const began = performance.now();
+  // Snapping fights a frame-by-frame animation; it comes back at the end.
+  const snap = node.style.scrollSnapType;
+  node.style.scrollSnapType = "none";
+
+  const frame = (now: number) => {
+    const progress = Math.min((now - began) / duration, 1);
+    // easeInOutCubic
+    const eased =
+      progress < 0.5
+        ? 4 * progress ** 3
+        : 1 - (-2 * progress + 2) ** 3 / 2;
+
+    node.scrollLeft = start + distance * eased;
+    if (progress < 1) requestAnimationFrame(frame);
+    else node.style.scrollSnapType = snap;
+  };
+
+  requestAnimationFrame(frame);
+}
 
 export function BookRail({
   title,
@@ -62,7 +90,7 @@ export function BookRail({
     const node = railRef.current;
     if (!node) return;
     hold();
-    node.scrollBy({ left: direction * step() * 2 });
+    glide(node, node.scrollLeft + direction * step() * 2, 700);
   };
 
   useEffect(() => {
@@ -74,7 +102,9 @@ export function BookRail({
       if (!node || paused || document.hidden) return;
 
       const atEnd = node.scrollLeft + node.clientWidth >= node.scrollWidth - 8;
-      node.scrollTo({ left: atEnd ? 0 : node.scrollLeft + step(), behavior: "smooth" });
+      // Rewinding the whole rail deserves a longer, calmer glide.
+      if (atEnd) glide(node, 0, 2200);
+      else glide(node, node.scrollLeft + step());
     }, STEP_MS);
 
     return () => clearInterval(timer);
