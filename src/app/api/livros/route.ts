@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@/lib/auth";
 import { createBook, filterBooks, listBooks } from "@/lib/catalog";
-import { KINDS } from "@/lib/types";
+import { COVER_SOURCES, KINDS } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -22,6 +22,9 @@ const schema = z.object({
   fileKey: z.string().min(3),
   fileName: z.string().min(1),
   fileSize: z.number().int().min(1),
+  isbn: z.string().max(20).optional(),
+  coverUrl: z.string().url().max(300).optional(),
+  coverSource: z.enum(COVER_SOURCES).optional(),
   coverKey: z.string().optional(),
 });
 

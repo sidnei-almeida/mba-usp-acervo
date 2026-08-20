@@ -71,6 +71,11 @@ async function bootstrap() {
     )
   `;
 
+  // Additive migrations for shelves created before remote covers existed.
+  await run`alter table livros add column if not exists isbn text`;
+  await run`alter table livros add column if not exists capa_url text`;
+  await run`alter table livros add column if not exists capa_fonte text`;
+
   await run`create index if not exists livros_area_idx on livros (area)`;
   await run`create index if not exists livros_criado_em_idx on livros (criado_em desc)`;
 }

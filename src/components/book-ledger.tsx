@@ -8,6 +8,34 @@ import { KIND_LABEL } from "@/lib/types";
 
 type Peek = { book: Book; x: number; y: number } | null;
 
+function Thumb({ book }: { book: Book }) {
+  const artwork = book.coverUrl ?? (book.coverKey ? `/api/arquivo/${book.coverKey}` : null);
+
+  if (artwork) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={artwork}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover"
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden
+      className="block h-full w-full"
+      style={{
+        background: `linear-gradient(150deg, ${book.accent}, rgba(0,0,0,0.55))`,
+      }}
+    />
+  );
+}
+
 /** The catalogue read as an index: hairline rows, cover peeking on hover. */
 export function BookLedger({ books }: { books: Book[] }) {
   const [peek, setPeek] = useState<Peek>(null);
@@ -16,6 +44,7 @@ export function BookLedger({ books }: { books: Book[] }) {
     <div className="relative">
       <div className="ledger-row !border-t-0 pb-2 pt-0">
         <span className="num">Nº</span>
+        <span />
         <span className="label">Título</span>
         <span className="label ledger-hide">Autoria</span>
         <span className="label ledger-hide">Área</span>
@@ -27,16 +56,18 @@ export function BookLedger({ books }: { books: Book[] }) {
           key={book.id}
           href={`/livro/${book.slug}`}
           className="ledger-row group text-muted hover:text-bone"
-          onMouseMove={(event) =>
-            setPeek({ book, x: event.clientX, y: event.clientY })
-          }
+          onMouseMove={(event) => setPeek({ book, x: event.clientX, y: event.clientY })}
           onMouseLeave={() => setPeek(null)}
         >
-          <span className="num group-hover:text-bone">
+          <span className="num self-center group-hover:text-bone">
             {String(index + 1).padStart(3, "0")}
           </span>
 
-          <span className="min-w-0">
+          <span className="block h-10 w-7 self-center overflow-hidden border border-line bg-ink-3">
+            <Thumb book={book} />
+          </span>
+
+          <span className="min-w-0 self-center">
             <span className="block truncate text-[0.8125rem] text-bone">{book.title}</span>
             <span className="mt-0.5 block truncate text-[0.625rem] uppercase tracking-[0.14em] text-dim">
               {KIND_LABEL[book.kind]}
@@ -44,15 +75,17 @@ export function BookLedger({ books }: { books: Book[] }) {
             </span>
           </span>
 
-          <span className="ledger-hide truncate text-[0.6875rem] uppercase tracking-[0.1em]">
+          <span className="ledger-hide self-center truncate text-[0.6875rem] uppercase tracking-[0.1em]">
             {book.authors.join(", ")}
           </span>
 
-          <span className="ledger-hide truncate text-[0.625rem] uppercase tracking-[0.16em]">
+          <span className="ledger-hide self-center truncate text-[0.625rem] uppercase tracking-[0.16em]">
             {book.discipline}
           </span>
 
-          <span className="text-right text-[0.6875rem] tabular-nums">{book.year ?? "—"}</span>
+          <span className="self-center text-right text-[0.6875rem] tabular-nums">
+            {book.year ?? "—"}
+          </span>
         </Link>
       ))}
 
@@ -65,10 +98,7 @@ export function BookLedger({ books }: { books: Book[] }) {
             top: Math.min(peek.y - 90, (globalThis.innerHeight ?? 800) - 190),
           }}
         >
-          <BookCover
-            book={peek.book}
-            className="shadow-[0_24px_60px_-24px_rgba(0,0,0,0.95)]"
-          />
+          <BookCover book={peek.book} className="shadow-[0_24px_60px_-24px_rgba(0,0,0,0.95)]" />
         </div>
       ) : null}
     </div>
