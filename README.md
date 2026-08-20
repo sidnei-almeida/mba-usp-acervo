@@ -59,7 +59,11 @@ coloque em `.env.local`:
 DATABASE_URL=postgresql://usuario:senha@ep-xxx.neon.tech/neondb?sslmode=require
 ```
 
-As tabelas `usuarios` e `livros` são criadas sozinhas no primeiro acesso. Sem
+Também são aceitos os nomes `POSTGRES_URL`, `DATABASE_URL_UNPOOLED` e
+`POSTGRES_URL_NON_POOLING`, que é como a Neon e a Vercel batizam a mesma string.
+As tabelas `usuarios` e `livros` são criadas sozinhas no primeiro acesso; use
+`npm run db` para conferir o estado (e `npm run db -- --limpar-demo` para tirar
+os títulos de demonstração). Sem
 `DATABASE_URL`, contas e catálogo caem no modo JSON descrito acima — bom para
 desenvolvimento, não para produção.
 
@@ -110,6 +114,7 @@ src/lib/
 | `npm run build` | build de produção |
 | `npm run start` | sobe o build |
 | `npm run lint` | ESLint |
+| `npm run db` | mostra tabelas e contagens do Postgres |
 
 O `postinstall` copia o worker do pdf.js para `public/`.
 
