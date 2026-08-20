@@ -4,8 +4,8 @@ Biblioteca digital para alunos do MBA USP/Esalq compartilharem livros, apostilas
 casos e artigos em PDF. Interface em preto absoluto, tipografia editorial e
 navegação por trilhos — referência declarada: MUBI.
 
-Construído com **Next.js 16 (App Router) + TypeScript + Tailwind v4**, usando
-**Cloudflare R2** como backend de arquivos.
+Construído com **Next.js 16 (App Router) + TypeScript + Tailwind v4**, com
+**Cloudflare R2** para os arquivos e **Neon (Postgres)** para contas e catálogo.
 
 ## Como rodar
 
@@ -42,19 +42,33 @@ carrega o arquivo.
 ```
 livros/<id>/<arquivo>.pdf    arquivo original enviado
 capas/<id>.jpg               primeira página renderizada no navegador
-catalogo/<id>.json           metadados de um título
-catalogo/_index.json         índice consultado pelas páginas
+catalogo/<id>.json           metadados (apenas no modo sem banco)
+catalogo/_index.json         índice (apenas no modo sem banco)
 ```
 
-Não há banco de dados: o próprio R2 guarda o catálogo. `src/lib/catalog.ts`
-isola essa camada, então trocar por Postgres/D1 depois é local e contido.
+Com `DATABASE_URL` configurada, os metadados vivem no Neon e o bucket guarda
+somente arquivos. `src/lib/catalog.ts` escolhe a implementação em tempo de
+execução (`catalog-db.ts` ou `catalog-json.ts`), ambas atrás da mesma interface.
 
-## Controle de envio
+## Neon (Postgres)
 
-`UPLOAD_PASSCODE` define o código combinado com a turma. Com ele preenchido, a
-consulta ao acervo continua aberta e apenas `/enviar` (e a remoção de títulos)
-exige o código, guardado em cookie assinado por `SESSION_SECRET`. Sem
-`UPLOAD_PASSCODE`, o envio fica aberto — útil só em desenvolvimento.
+Crie um projeto em [neon.tech](https://neon.tech), copie a connection string e
+coloque em `.env.local`:
+
+```
+DATABASE_URL=postgresql://usuario:senha@ep-xxx.neon.tech/neondb?sslmode=require
+```
+
+As tabelas `usuarios` e `livros` são criadas sozinhas no primeiro acesso. Sem
+`DATABASE_URL`, contas e catálogo caem no modo JSON descrito acima — bom para
+desenvolvimento, não para produção.
+
+## Contas
+
+Cadastro com usuário e senha, sem e-mail. A senha é derivada com `scrypt` e a
+sessão vive em cookie assinado por `SESSION_SECRET`. **A primeira conta criada
+vira administradora.** Consultar o acervo não exige conta; enviar material sim,
+e remover um título é permitido a quem o enviou ou a um administrador.
 
 ## Estrutura
 
@@ -65,11 +79,14 @@ src/app/                  páginas e rotas de API
   colecoes/               áreas do curso
   livro/[slug]/           ficha do título e leitor embutido
   enviar/                 sala de envio (dropzone + formulário)
-  api/                    upload, catálogo, sessão e entrega de arquivos
+  entrar/, criar-conta/   acesso e cadastro
+  api/                    contas, sessão, upload, catálogo e entrega de arquivos
 src/components/           header, trilhos, capas geradas, formulário
 src/lib/
   storage/                driver R2 e driver local (mesma interface)
-  catalog.ts              CRUD e consultas do catálogo
+  db/client.ts            conexão Neon e criação das tabelas
+  catalog*.ts             catálogo: dispatcher, implementação Neon e JSON
+  users.ts, auth.ts       contas, hash de senha e sessão
   pdf-client.ts           leitura do PDF e captura da capa no navegador
 ```
 
@@ -80,6 +97,9 @@ src/lib/
   tipográfica gerada com cor determinística por título.
 - **Leitor**: `/livro/<slug>/ler` embute o PDF em tela cheia com cabeçalho
   próprio.
+- **Índice**: além da grade de capas, o acervo tem uma vista de índice
+  (`/acervo?vista=indice`) — linhas numeradas com a capa aparecendo ao lado do
+  cursor.
 - **Limite**: 200 MB por arquivo.
 
 ## Scripts

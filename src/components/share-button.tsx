@@ -22,11 +22,11 @@ export function ShareButton({ title }: { title: string }) {
   };
 
   return (
-    <button type="button" onClick={share} className="btn btn-ghost">
+    <button type="button" onClick={share} className="btn btn-ghost w-full">
       {copied ? (
-        <Check className="h-4 w-4" strokeWidth={1.6} />
+        <Check className="h-3.5 w-3.5" strokeWidth={1.6} />
       ) : (
-        <Link2 className="h-4 w-4" strokeWidth={1.6} />
+        <Link2 className="h-3.5 w-3.5" strokeWidth={1.6} />
       )}
       {copied ? "Link copiado" : "Compartilhar"}
     </button>

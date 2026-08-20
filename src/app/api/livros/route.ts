@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { isContributor } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { createBook, filterBooks, listBooks } from "@/lib/catalog";
 import { KINDS } from "@/lib/types";
 
@@ -23,7 +23,6 @@ const schema = z.object({
   fileName: z.string().min(1),
   fileSize: z.number().int().min(1),
   coverKey: z.string().optional(),
-  uploadedBy: z.string().max(80).optional(),
 });
 
 export async function GET(request: Request) {
@@ -39,8 +38,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await isContributor())) {
-    return NextResponse.json({ error: "Sessão não autorizada." }, { status: 401 });
+  const user = await currentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Entre na sua conta para enviar." }, { status: 401 });
   }
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -51,6 +51,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const book = await createBook(parsed.data);
+  const book = await createBook({
+    ...parsed.data,
+    uploadedById: user.id,
+    uploadedBy: user.name ?? user.username,
+  });
   return NextResponse.json({ book }, { status: 201 });
 }

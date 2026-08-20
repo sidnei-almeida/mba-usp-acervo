@@ -26,7 +26,7 @@ export function DeleteBook({ id, title }: { id: string; title: string }) {
       type="button"
       onClick={remove}
       disabled={pending}
-      className="link-underline inline-flex items-center gap-2 self-start text-[0.6875rem] uppercase tracking-[0.18em] text-muted transition-colors hover:text-[#e5866f] disabled:opacity-40"
+      className="underline-grow inline-flex items-center gap-2 self-start text-[0.6875rem] uppercase tracking-[0.18em] text-muted transition-colors hover:text-[#e5866f] disabled:opacity-40"
     >
       <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
       {pending ? "Removendo…" : "Remover do acervo"}

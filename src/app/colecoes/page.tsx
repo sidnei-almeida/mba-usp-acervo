@@ -17,51 +17,56 @@ export default async function CollectionsPage() {
   const disciplines = disciplinesOf(books);
 
   return (
-    <div className="pt-[4.5rem]">
-      <section className="shell pb-14 pt-16 md:pt-24">
-        <p className="eyebrow">Coleções</p>
-        <h1 className="display mt-5 max-w-3xl text-[clamp(2.5rem,6vw,4.5rem)]">
-          O curso inteiro, em prateleiras.
-        </h1>
-        <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted">
-          Cada área reúne o que as turmas consideraram essencial — do livro-texto
-          ao caso discutido em sala.
-        </p>
+    <div className="pt-[var(--header)]">
+      <section className="shell pt-10">
+        <div className="flex items-center gap-3">
+          <span className="num">004</span>
+          <span className="h-px w-8 bg-line" />
+          <span className="label">Coleções</span>
+        </div>
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
+          <h1 className="display text-[clamp(1.75rem,4vw,3rem)]">
+            O curso inteiro, em prateleiras.
+          </h1>
+          <p className="label">{String(disciplines.length).padStart(2, "0")} áreas</p>
+        </div>
       </section>
 
-      <section className="shell space-y-px border-y border-line bg-line">
-        {disciplines.map((discipline) => {
+      <section className="shell">
+        {disciplines.map((discipline, index) => {
           const items = books.filter((book) => book.discipline === discipline.name);
           return (
             <Link
               key={discipline.name}
               href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
-              className="group grid gap-6 bg-ink px-1 py-9 transition-colors hover:bg-ink-2 md:grid-cols-[1fr_auto] md:items-center md:px-6"
+              className="group grid gap-4 border-b border-line py-5 transition-colors hover:bg-ink-2 md:grid-cols-[auto_1fr_auto] md:items-center md:gap-8"
             >
-              <div>
-                <div className="flex items-center gap-4">
-                  <h2 className="font-display text-[clamp(1.75rem,3.4vw,2.75rem)] leading-none">
+              <span className="num">{String(index + 1).padStart(2, "0")}</span>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="display text-[clamp(1.25rem,2.6vw,2rem)] leading-none">
                     {discipline.name}
                   </h2>
                   <ArrowUpRight
-                    className="h-5 w-5 text-muted transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-bone"
+                    className="h-3.5 w-3.5 text-dim transition-transform duration-400 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-bone"
                     strokeWidth={1.4}
                   />
                 </div>
-                <p className="mt-3 text-[0.6875rem] uppercase tracking-[0.2em] text-muted">
+                <p className="label mt-2 truncate">
                   {discipline.count} {discipline.count === 1 ? "título" : "títulos"} ·{" "}
                   {items.slice(0, 3).map((book) => book.authors[0]).join(" · ")}
                 </p>
               </div>
 
-              <div className="flex -space-x-8 md:justify-end">
-                {items.slice(0, 4).map((book, index) => (
+              <div className="flex -space-x-6 md:justify-end">
+                {items.slice(0, 4).map((book, position) => (
                   <div
                     key={book.id}
-                    className="w-16 shrink-0 transition-transform duration-500 group-hover:-translate-y-1.5"
-                    style={{ zIndex: 4 - index, transitionDelay: `${index * 40}ms` }}
+                    className="w-11 shrink-0 transition-transform duration-500 group-hover:-translate-y-1"
+                    style={{ zIndex: 4 - position, transitionDelay: `${position * 40}ms` }}
                   >
-                    <BookCover book={book} className="shadow-[0_18px_40px_-18px_rgba(0,0,0,0.9)]" />
+                    <BookCover book={book} className="shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)]" />
                   </div>
                 ))}
               </div>
@@ -70,14 +75,14 @@ export default async function CollectionsPage() {
         })}
       </section>
 
-      <section className="shell py-20">
-        <p className="eyebrow">Por formato</p>
-        <div className="mt-8 flex flex-wrap gap-3">
+      <section className="shell py-10">
+        <p className="label">Por formato</p>
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {KINDS.map((kind) => (
-            <Link key={kind} href={`/acervo?tipo=${kind}`} className="chip h-11 px-5 text-sm">
+            <Link key={kind} href={`/acervo?tipo=${kind}`} className="chip h-8 px-3">
               {KIND_LABEL[kind]}
-              <span className="opacity-50">
-                {books.filter((book) => book.kind === kind).length}
+              <span className="opacity-45">
+                {String(books.filter((book) => book.kind === kind).length).padStart(2, "0")}
               </span>
             </Link>
           ))}

@@ -8,13 +8,13 @@ const COLUMNS = [
       { href: "/acervo", label: "Todo o acervo" },
       { href: "/colecoes", label: "Coleções" },
       { href: "/acervo?ordem=populares", label: "Mais baixados" },
-      { href: "/acervo?ordem=recentes", label: "Adicionados recentemente" },
     ],
   },
   {
     title: "Comunidade",
     links: [
       { href: "/enviar", label: "Enviar material" },
+      { href: "/criar-conta", label: "Criar conta" },
       { href: "/sobre", label: "Como funciona" },
       { href: "/sobre#direitos", label: "Direitos autorais" },
     ],
@@ -23,26 +23,25 @@ const COLUMNS = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-32 border-t border-line bg-ink-2/40">
-      <div className="shell grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]">
-        <div className="max-w-sm">
+    <footer className="mt-16 border-t border-line">
+      <div className="shell grid gap-8 py-10 md:grid-cols-[1.6fr_1fr_1fr]">
+        <div className="max-w-xs">
           <EsalqMark />
-          <p className="mt-6 text-sm leading-relaxed text-muted">
+          <p className="prose-sm mt-4">
             Biblioteca mantida por alunos e ex-alunos do MBA USP/Esalq. Um lugar
-            só para o material que circula entre turmas — organizado, pesquisável
-            e sempre disponível.
+            só para o material que circula entre turmas.
           </p>
         </div>
 
         {COLUMNS.map((column) => (
           <div key={column.title}>
-            <p className="eyebrow">{column.title}</p>
-            <ul className="mt-5 space-y-3">
+            <p className="label">{column.title}</p>
+            <ul className="mt-3 space-y-1.5">
               {column.links.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="link-underline text-sm text-[#c8c6c1] hover:text-bone"
+                    className="underline-grow text-[0.75rem] text-[#a6a8ab] hover:text-bone"
                   >
                     {link.label}
                   </Link>
@@ -53,12 +52,11 @@ export function SiteFooter() {
         ))}
       </div>
 
-      <div className="shell flex flex-col gap-3 border-t border-line py-7 text-xs text-muted md:flex-row md:items-center md:justify-between">
-        <p>
-          Iniciativa independente de alunos. Não é um canal oficial da USP, da
-          Esalq ou da Fundação de Estudos Agrários Luiz de Queiroz.
+      <div className="shell flex flex-col gap-2 border-t border-line py-4 md:flex-row md:items-center md:justify-between">
+        <p className="text-[0.625rem] uppercase tracking-[0.16em] text-dim">
+          Iniciativa independente de alunos · sem vínculo oficial com USP, Esalq ou Fealq
         </p>
-        <p>© {new Date().getFullYear()} Acervo MBA USP/Esalq</p>
+        <p className="num">© {new Date().getFullYear()}</p>
       </div>
     </footer>
   );

@@ -1,30 +1,29 @@
 import { NextResponse } from "next/server";
-import {
-  SESSION_COOKIE,
-  SESSION_MAX_AGE,
-  checkPasscode,
-  passcodeRequired,
-  sessionToken,
-} from "@/lib/auth";
+import { z } from "zod";
+import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from "@/lib/auth";
+import { findUserByUsername, publicUser, verifyPassword } from "@/lib/users";
 
 export const runtime = "nodejs";
 
+const schema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { passcode?: string };
-  if (!passcodeRequired()) {
-    return NextResponse.json({ ok: true, open: true });
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Informe usuário e senha." }, { status: 400 });
   }
-  if (!body.passcode || !checkPasscode(body.passcode)) {
-    return NextResponse.json({ error: "Código de acesso inválido." }, { status: 401 });
+
+  const stored = await findUserByUsername(parsed.data.username);
+  const valid = stored && (await verifyPassword(parsed.data.password, stored.passwordHash));
+  if (!stored || !valid) {
+    return NextResponse.json({ error: "Usuário ou senha incorretos." }, { status: 401 });
   }
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, sessionToken(), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
+
+  const response = NextResponse.json({ user: publicUser(stored) });
+  response.cookies.set(SESSION_COOKIE, createSessionToken(stored.id), sessionCookieOptions());
   return response;
 }
 

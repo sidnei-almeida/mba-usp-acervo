@@ -22,10 +22,10 @@ export default async function ReaderPage({ params }: PageProps<"/livro/[slug]/le
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-[#0a0b0d]">
-      <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-4 md:px-6">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-line px-4">
         <div className="min-w-0">
-          <p className="truncate font-display text-lg leading-tight">{book.title}</p>
-          <p className="truncate text-[0.625rem] uppercase tracking-[0.2em] text-muted">
+          <p className="truncate text-[0.8125rem] uppercase tracking-[0.08em]">{book.title}</p>
+          <p className="truncate text-[0.5625rem] uppercase tracking-[0.18em] text-dim">
             {KIND_LABEL[book.kind]} · {book.authors.join(", ")}
           </p>
         </div>
@@ -33,7 +33,7 @@ export default async function ReaderPage({ params }: PageProps<"/livro/[slug]/le
         <div className="flex shrink-0 items-center gap-2">
           <a
             href={`/api/arquivo/${book.fileKey}?download`}
-            className="btn btn-ghost h-10 px-4 text-xs"
+            className="btn btn-ghost"
           >
             <Download className="h-4 w-4" strokeWidth={1.6} />
             <span className="hidden sm:inline">Baixar</span>
@@ -41,7 +41,7 @@ export default async function ReaderPage({ params }: PageProps<"/livro/[slug]/le
           <Link
             href={`/livro/${book.slug}`}
             aria-label="Fechar leitor"
-            className="grid h-10 w-10 place-items-center rounded-full border border-line transition-colors hover:border-bone hover:bg-white/5"
+            className="grid h-9 w-9 place-items-center border border-line transition-colors hover:border-white/45"
           >
             <X className="h-4 w-4" strokeWidth={1.6} />
           </Link>

@@ -13,7 +13,6 @@ export const env = {
     publicBaseUrl: read("R2_PUBLIC_BASE_URL")?.replace(/\/$/, ""),
     endpoint: read("R2_ENDPOINT"),
   },
-  uploadPasscode: read("UPLOAD_PASSCODE"),
   sessionSecret: read("SESSION_SECRET") ?? "acervo-mba-usp-esalq-dev-secret",
   seedDemo: read("SEED_DEMO") !== "false",
   siteUrl: read("NEXT_PUBLIC_SITE_URL")?.replace(/\/$/, "") ?? "",

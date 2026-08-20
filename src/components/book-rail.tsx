@@ -9,12 +9,12 @@ import { cx } from "@/lib/utils";
 
 export function BookRail({
   title,
-  description,
+  index,
   books,
   href,
 }: {
   title: string;
-  description?: string;
+  index?: string;
   books: Book[];
   href?: string;
 }) {
@@ -39,31 +39,30 @@ export function BookRail({
   const nudge = (direction: 1 | -1) => {
     const node = railRef.current;
     if (!node) return;
-    node.scrollBy({ left: direction * Math.max(node.clientWidth * 0.8, 280) });
+    node.scrollBy({ left: direction * Math.max(node.clientWidth * 0.7, 240) });
   };
 
   if (books.length === 0) return null;
 
   return (
-    <section className="py-14">
-      <div className="shell mb-8 flex items-end justify-between gap-6">
-        <div>
-          <h2 className="font-display text-[2rem] leading-none md:text-[2.5rem]">{title}</h2>
-          {description ? (
-            <p className="mt-3 max-w-xl text-sm text-muted">{description}</p>
-          ) : null}
+    <section className="py-8">
+      <div className="shell mb-4 flex items-center justify-between gap-6 border-b border-line pb-2.5">
+        <div className="flex items-baseline gap-3">
+          {index ? <span className="num">{index}</span> : null}
+          <h2 className="text-[0.6875rem] uppercase tracking-[0.2em] text-bone">{title}</h2>
+          <span className="num">{String(books.length).padStart(2, "0")}</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {href ? (
             <Link
               href={href}
-              className="link-underline hidden text-[0.75rem] uppercase tracking-[0.18em] text-muted hover:text-bone md:block"
+              className="underline-grow hidden text-[0.625rem] uppercase tracking-[0.2em] text-muted hover:text-bone md:block"
             >
               Ver tudo
             </Link>
           ) : null}
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-1 md:flex">
             {([-1, 1] as const).map((direction) => (
               <button
                 key={direction}
@@ -72,14 +71,14 @@ export function BookRail({
                 aria-label={direction === -1 ? "Anterior" : "Próximo"}
                 disabled={direction === -1 ? edges.start : edges.end}
                 className={cx(
-                  "grid h-10 w-10 place-items-center rounded-full border border-line transition-all",
-                  "hover:border-bone hover:bg-white/5 disabled:pointer-events-none disabled:opacity-25",
+                  "grid h-7 w-7 place-items-center border border-line transition-colors",
+                  "hover:border-white/45 disabled:pointer-events-none disabled:opacity-20",
                 )}
               >
                 {direction === -1 ? (
-                  <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+                  <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.4} />
                 ) : (
-                  <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.4} />
                 )}
               </button>
             ))}
@@ -87,18 +86,13 @@ export function BookRail({
         </div>
       </div>
 
-      <div
-        ref={railRef}
-        onScroll={measure}
-        className="rail shell pb-2"
-        style={{ scrollPaddingInline: "1.25rem" }}
-      >
-        {books.map((book, index) => (
+      <div ref={railRef} onScroll={measure} className="rail shell pb-1">
+        {books.map((book, position) => (
           <BookCard
             key={book.id}
             book={book}
-            index={index}
-            className="w-[62vw] shrink-0 sm:w-[38vw] md:w-[26vw] lg:w-[17.5vw] xl:w-[15vw]"
+            index={position}
+            className="w-[38vw] shrink-0 sm:w-[24vw] md:w-[17vw] lg:w-[12.5vw] xl:w-[10.5vw]"
           />
         ))}
       </div>

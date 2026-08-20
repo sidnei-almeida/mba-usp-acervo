@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { BookLedger } from "@/components/book-ledger";
 import { BookRail } from "@/components/book-rail";
 import { Hero } from "@/components/hero";
+import { Marquee } from "@/components/marquee";
 import { disciplinesOf, listBooks } from "@/lib/catalog";
-import { accentFor } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,17 +13,22 @@ export default async function HomePage() {
 
   if (books.length === 0) {
     return (
-      <div className="shell flex min-h-[70svh] flex-col justify-center py-32">
-        <p className="eyebrow">Acervo MBA USP/Esalq</p>
-        <h1 className="display mt-6 max-w-3xl text-[clamp(2.5rem,6vw,4.5rem)]">
+      <div className="shell flex min-h-[70svh] flex-col justify-center py-24">
+        <span className="label">Acervo MBA USP/Esalq</span>
+        <h1 className="display mt-4 max-w-2xl text-[clamp(2rem,5vw,3.5rem)]">
           A estante ainda está vazia.
         </h1>
-        <p className="mt-6 max-w-xl text-muted">
-          Envie o primeiro material e o acervo começa a existir.
+        <p className="prose-sm mt-4 max-w-sm">
+          Crie sua conta e envie o primeiro material — o acervo começa aí.
         </p>
-        <Link href="/enviar" className="btn btn-solid mt-10 self-start">
-          Enviar material
-        </Link>
+        <div className="mt-6 flex gap-2">
+          <Link href="/criar-conta" className="btn btn-solid">
+            Criar conta
+          </Link>
+          <Link href="/entrar" className="btn btn-ghost">
+            Entrar
+          </Link>
+        </div>
       </div>
     );
   }
@@ -32,12 +38,12 @@ export default async function HomePage() {
   const pages = books.reduce((total, book) => total + (book.pages ?? 0), 0);
 
   const stats = [
-    { value: books.length, label: "títulos disponíveis" },
-    { value: disciplines.length, label: "áreas do curso" },
-    { value: pages.toLocaleString("pt-BR"), label: "páginas catalogadas" },
+    { value: String(books.length).padStart(2, "0"), label: "títulos" },
+    { value: String(disciplines.length).padStart(2, "0"), label: "áreas" },
+    { value: pages.toLocaleString("pt-BR"), label: "páginas" },
     {
       value: books.reduce((total, book) => total + book.downloads, 0).toLocaleString("pt-BR"),
-      label: "downloads da turma",
+      label: "downloads",
     },
   ];
 
@@ -45,94 +51,107 @@ export default async function HomePage() {
     <>
       <Hero book={featured} total={books.length} />
 
+      <Marquee items={disciplines} />
+
       <BookRail
         title="Adicionados recentemente"
-        description="O que a turma subiu por último — do caso da semana ao livro-texto da disciplina."
-        books={books.slice(0, 12)}
+        index="002"
+        books={books.slice(0, 14)}
         href="/acervo?ordem=recentes"
       />
 
-      <section className="border-y border-line bg-ink-2/50 py-16">
-        <div className="shell grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="shell py-10">
+        <div className="mb-5 flex items-end justify-between gap-6 border-b border-line pb-2.5">
+          <div className="flex items-baseline gap-3">
+            <span className="num">003</span>
+            <h2 className="text-[0.6875rem] uppercase tracking-[0.2em]">Índice do acervo</h2>
+          </div>
+          <Link
+            href="/acervo?vista=indice"
+            className="underline-grow text-[0.625rem] uppercase tracking-[0.2em] text-muted hover:text-bone"
+          >
+            Ver índice completo
+          </Link>
+        </div>
+        <BookLedger books={books.slice(0, 8)} />
+      </section>
+
+      <section className="border-y border-line">
+        <div className="shell grid grid-cols-2 divide-x divide-[color:var(--color-line)] md:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label}>
-              <p className="font-display text-[3.25rem] leading-none">{stat.value}</p>
-              <p className="mt-3 text-[0.6875rem] uppercase tracking-[0.2em] text-muted">
-                {stat.label}
-              </p>
+            <div key={stat.label} className="px-4 py-6 first:pl-0 last:pr-0">
+              <p className="display text-[2rem] leading-none">{stat.value}</p>
+              <p className="label mt-2">{stat.label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {disciplines.slice(0, 3).map((discipline) => (
+      {disciplines.slice(0, 2).map((discipline, index) => (
         <BookRail
           key={discipline.name}
           title={discipline.name}
+          index={String(index + 4).padStart(3, "0")}
           books={books.filter((book) => book.discipline === discipline.name)}
           href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
         />
       ))}
 
-      <section className="py-20">
-        <div className="shell">
-          <p className="eyebrow">Coleções</p>
-          <h2 className="display mt-5 max-w-2xl text-[clamp(2rem,4.5vw,3.25rem)]">
-            Percorra o curso por área.
-          </h2>
+      <section className="shell py-12">
+        <div className="mb-5 flex items-baseline gap-3 border-b border-line pb-2.5">
+          <span className="num">006</span>
+          <h2 className="text-[0.6875rem] uppercase tracking-[0.2em]">Coleções</h2>
+        </div>
 
-          <div className="mt-12 grid gap-px overflow-hidden rounded-[4px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-            {disciplines.map((discipline) => (
-              <Link
-                key={discipline.name}
-                href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
-                className="group relative flex min-h-[11rem] flex-col justify-between bg-ink p-7 transition-colors hover:bg-ink-3"
-              >
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 top-0 h-[3px] opacity-70"
-                  style={{ background: accentFor(discipline.name) }}
+        <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
+          {disciplines.map((discipline, index) => (
+            <Link
+              key={discipline.name}
+              href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
+              className="group flex min-h-[7rem] flex-col justify-between bg-ink p-4 transition-colors hover:bg-ink-2"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className="num">{String(index + 1).padStart(2, "0")}</span>
+                <ArrowUpRight
+                  className="h-3.5 w-3.5 shrink-0 text-dim transition-transform duration-400 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-bone"
+                  strokeWidth={1.4}
                 />
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="max-w-[14ch] font-display text-[1.75rem] leading-[1.05]">
-                    {discipline.name}
-                  </h3>
-                  <ArrowUpRight
-                    className="h-5 w-5 shrink-0 text-muted transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-bone"
-                    strokeWidth={1.4}
-                  />
-                </div>
-                <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-muted">
+              </div>
+              <div>
+                <h3 className="display text-[1.125rem] leading-tight">{discipline.name}</h3>
+                <p className="label mt-1.5">
                   {discipline.count} {discipline.count === 1 ? "título" : "títulos"}
                 </p>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <section className="pb-24">
-        <div className="shell">
-          <div className="relative overflow-hidden rounded-[6px] border border-line px-8 py-16 md:px-16 md:py-24">
-            <div
-              aria-hidden
-              className="absolute inset-0 -z-10"
-              style={{
-                background:
-                  "radial-gradient(90% 130% at 12% 0%, rgba(59,122,228,0.28), transparent 62%), linear-gradient(180deg,#0f1113,#0a0b0d)",
-              }}
-            />
-            <p className="eyebrow">Contribua</p>
-            <h2 className="display mt-5 max-w-2xl text-[clamp(2rem,4.5vw,3.5rem)]">
-              Tem material que ajudou você? Coloque na estante.
-            </h2>
-            <p className="mt-6 max-w-xl text-[0.9375rem] leading-relaxed text-[#b9b7b2]">
-              Suba o PDF, descreva em trinta segundos e o arquivo passa a valer
-              para todas as turmas. Guardado no Cloudflare R2, servido rápido de
-              qualquer lugar.
-            </p>
-            <Link href="/enviar" className="btn btn-solid mt-10">
+      <section className="shell pb-14">
+        <div className="relative overflow-hidden border border-line px-6 py-10 md:px-10 md:py-12">
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10"
+            style={{
+              background:
+                "radial-gradient(70% 120% at 8% 0%, rgba(63,123,234,0.2), transparent 60%)",
+            }}
+          />
+          <span className="label">Contribua</span>
+          <h2 className="display mt-3 max-w-xl text-[clamp(1.5rem,3.2vw,2.5rem)]">
+            Tem material que ajudou você? Coloque na estante.
+          </h2>
+          <p className="prose-sm mt-4 max-w-md">
+            Suba o PDF, descreva em trinta segundos e o arquivo passa a valer para
+            todas as turmas.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link href="/enviar" className="btn btn-solid">
               Enviar material
+            </Link>
+            <Link href="/criar-conta" className="btn btn-ghost">
+              Criar conta
             </Link>
           </div>
         </div>

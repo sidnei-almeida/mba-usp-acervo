@@ -45,7 +45,7 @@ export function BookCover({
         <div
           className="flex h-full w-full flex-col"
           style={{
-            padding: "8cqw",
+            padding: "7cqw",
             background: `linear-gradient(155deg, ${shade(book.accent, 26)} 0%, ${book.accent} 46%, ${shade(book.accent, -34)} 100%)`,
           }}
         >
@@ -69,12 +69,12 @@ export function BookCover({
 
           <div className="relative flex items-center justify-between text-white/70">
             <span
-              style={{ fontSize: "3.1cqw", letterSpacing: "0.24em" }}
+              style={{ fontSize: "2.9cqw", letterSpacing: "0.22em" }}
               className="uppercase"
             >
               {book.publisher ?? "Acervo"}
             </span>
-            <span style={{ fontSize: "3.1cqw" }} className="tabular-nums text-white/55">
+            <span style={{ fontSize: "2.9cqw" }} className="tabular-nums text-white/55">
               {book.year ?? ""}
             </span>
           </div>
@@ -86,7 +86,7 @@ export function BookCover({
             />
             <p
               className="font-display text-white"
-              style={{ fontSize: "11.5cqw", lineHeight: 0.94 }}
+              style={{ fontSize: "10.5cqw", lineHeight: 0.95 }}
             >
               {book.title}
             </p>
@@ -103,7 +103,7 @@ export function BookCover({
           <div className="relative mt-[8cqw] flex items-end justify-between gap-[4cqw]">
             <p
               className="uppercase text-white/75"
-              style={{ fontSize: "3.1cqw", letterSpacing: "0.16em" }}
+              style={{ fontSize: "2.9cqw", letterSpacing: "0.16em" }}
             >
               {book.authors[0]}
               {book.authors.length > 1 ? " e outros" : ""}

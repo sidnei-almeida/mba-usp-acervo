@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isContributor } from "@/lib/auth";
+import { canManage, currentUser } from "@/lib/auth";
 import { deleteBook, getBookById } from "@/lib/catalog";
 
 export const runtime = "nodejs";
@@ -14,11 +14,17 @@ export async function GET(_request: Request, context: Context) {
 }
 
 export async function DELETE(_request: Request, context: Context) {
-  if (!(await isContributor())) {
-    return NextResponse.json({ error: "Sessão não autorizada." }, { status: 401 });
-  }
   const { id } = await context.params;
-  const removed = await deleteBook(id);
-  if (!removed) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
+  const book = await getBookById(id);
+  if (!book) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
+
+  if (!canManage(await currentUser(), book.uploadedById)) {
+    return NextResponse.json(
+      { error: "Só quem enviou o material (ou um administrador) pode removê-lo." },
+      { status: 403 },
+    );
+  }
+
+  await deleteBook(id);
   return NextResponse.json({ ok: true });
 }

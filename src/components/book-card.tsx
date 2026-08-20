@@ -16,37 +16,31 @@ export function BookCard({
   index?: number;
 }) {
   return (
-    <Link
-      href={`/livro/${book.slug}`}
-      className={cx("group block", className)}
-      style={index !== undefined ? { animationDelay: `${Math.min(index, 12) * 40}ms` } : undefined}
-    >
-      <div className="relative overflow-hidden rounded-[3px]">
-        <div className="transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]">
+    <Link href={`/livro/${book.slug}`} className={cx("group block", className)}>
+      <div className="relative overflow-hidden">
+        <div className="transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]">
           <BookCover book={book} priority={priority} />
         </div>
-
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 p-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-          <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-white/70">
-            {KIND_LABEL[book.kind]}
-            {book.pages ? ` · ${book.pages} pág.` : ""}
-          </p>
-        </div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 transition-opacity duration-400 group-hover:opacity-100" />
+        <span className="pointer-events-none absolute bottom-2 left-2 text-[0.5625rem] uppercase tracking-[0.18em] text-white/80 opacity-0 transition-opacity duration-400 group-hover:opacity-100">
+          {KIND_LABEL[book.kind]}
+          {book.pages ? ` · ${book.pages} p.` : ""}
+        </span>
       </div>
 
-      <div className="mt-4">
-        <p className="text-[0.625rem] uppercase tracking-[0.2em] text-muted">
-          {book.discipline}
-        </p>
-        <h3 className="mt-2 font-display text-[1.375rem] leading-[1.1] text-bone transition-colors group-hover:text-white">
-          {book.title}
-        </h3>
-        <p className="mt-1.5 text-[0.8125rem] text-muted">
-          {book.authors.join(", ")}
-          {book.year ? ` · ${book.year}` : ""}
-        </p>
+      <div className="mt-2.5 flex items-baseline gap-2">
+        {index !== undefined ? (
+          <span className="num shrink-0">{String(index + 1).padStart(2, "0")}</span>
+        ) : null}
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-[0.75rem] uppercase leading-[1.25] tracking-[0.08em] text-bone">
+            {book.title}
+          </h3>
+          <p className="mt-1 truncate text-[0.625rem] uppercase tracking-[0.14em] text-dim">
+            {book.authors[0]}
+            {book.year ? ` · ${book.year}` : ""}
+          </p>
+        </div>
       </div>
     </Link>
   );
