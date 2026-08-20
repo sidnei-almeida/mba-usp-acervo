@@ -244,17 +244,17 @@ body {
   /* Ledger: the archive read as an index rather than a wall of covers. */
   .ledger-row {
     display: grid;
-    align-items: baseline;
+    align-items: center;
     gap: 1rem;
     border-top: 1px solid var(--color-line);
     padding-block: 0.7rem;
-    grid-template-columns: 2.5rem minmax(0, 2.1fr) minmax(0, 1.1fr) 10rem 4rem;
+    grid-template-columns: 2.5rem 1.75rem minmax(0, 2.1fr) minmax(0, 1.1fr) 10rem 4rem;
     transition: color 160ms ease;
   }
 
   @media (max-width: 900px) {
     .ledger-row {
-      grid-template-columns: 2rem minmax(0, 1fr) 4.5rem;
+      grid-template-columns: 2rem 1.75rem minmax(0, 1fr) 4.5rem;
     }
     .ledger-hide {
       display: none;

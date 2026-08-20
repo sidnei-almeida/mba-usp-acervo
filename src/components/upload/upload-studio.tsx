@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, UploadCloud, X } from "lucide-react";
+import type { CoverCandidate } from "@/lib/openlibrary";
 import { readPdfPreview } from "@/lib/pdf-client";
-import { KINDS, KIND_LABEL, type Kind } from "@/lib/types";
+import { KINDS, KIND_LABEL, type CoverSource, type Kind } from "@/lib/types";
 import { cx, formatBytes } from "@/lib/utils";
 
 type Form = {
@@ -14,6 +15,7 @@ type Form = {
   year: string;
   publisher: string;
   edition: string;
+  isbn: string;
   language: string;
   discipline: string;
   kind: Kind;
@@ -28,6 +30,7 @@ const EMPTY: Form = {
   year: "",
   publisher: "",
   edition: "",
+  isbn: "",
   language: "Português",
   discipline: "",
   kind: "livro",
@@ -44,12 +47,7 @@ function titleFromFileName(name: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function put(
-  url: string,
-  body: Blob,
-  contentType: string,
-  onProgress?: (ratio: number) => void,
-) {
+function put(url: string, body: Blob, contentType: string, onProgress?: (r: number) => void) {
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("PUT", url);
@@ -81,8 +79,47 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
+  const [candidates, setCandidates] = useState<CoverCandidate[]>([]);
+  const [searchingCover, setSearchingCover] = useState(false);
+  // null = first page of the PDF (or the generated cover when there is none).
+  const [chosenCover, setChosenCover] = useState<CoverCandidate | null>(null);
+
   const set = (key: keyof Form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
+
+  // Open Library lookup follows what is typed, debounced.
+  useEffect(() => {
+    const title = form.title.trim();
+    const isbn = form.isbn.trim();
+    const controller = new AbortController();
+
+    const timer = setTimeout(async () => {
+      if (title.length < 4 && isbn.length < 10) {
+        setCandidates([]);
+        return;
+      }
+      setSearchingCover(true);
+      try {
+        const params = new URLSearchParams({ titulo: title });
+        if (form.authors.trim()) params.set("autor", form.authors.split(/[,;]/)[0].trim());
+        if (isbn) params.set("isbn", isbn);
+
+        const response = await fetch(`/api/capas?${params}`, { signal: controller.signal });
+        if (!response.ok) return;
+        const data = (await response.json()) as { candidates: CoverCandidate[] };
+        setCandidates(data.candidates);
+      } catch {
+        // aborted or offline — the local cover still works
+      } finally {
+        setSearchingCover(false);
+      }
+    }, 600);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [form.title, form.authors, form.isbn]);
 
   const accept = useCallback(async (candidate: File) => {
     if (candidate.type !== "application/pdf") {
@@ -138,12 +175,13 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
       if (!pdfSlot.ok) throw new Error((await pdfSlot.json()).error ?? "Upload negado.");
       const slot = (await pdfSlot.json()) as { draftId: string; key: string; uploadUrl: string };
 
-      await put(slot.uploadUrl, file, "application/pdf", (ratio) =>
-        setProgress(ratio * 0.9),
-      );
+      await put(slot.uploadUrl, file, "application/pdf", (ratio) => setProgress(ratio * 0.9));
 
+      // A remote cover means nothing extra needs storing.
       let coverKey: string | undefined;
-      if (coverBlob) {
+      let coverSource: CoverSource = chosenCover ? "openlibrary" : "gerada";
+
+      if (!chosenCover && coverBlob) {
         const coverSlot = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -158,6 +196,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           const cover = (await coverSlot.json()) as { key: string; uploadUrl: string };
           await put(cover.uploadUrl, coverBlob, "image/jpeg");
           coverKey = cover.key;
+          coverSource = "pdf";
         }
       }
       setProgress(0.96);
@@ -175,6 +214,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           year: form.year ? Number(form.year) : undefined,
           publisher: form.publisher.trim() || undefined,
           edition: form.edition.trim() || undefined,
+          isbn: form.isbn.trim() || undefined,
           language: form.language.trim() || "Português",
           discipline: form.discipline.trim(),
           kind: form.kind,
@@ -187,6 +227,8 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           fileKey: slot.key,
           fileName: file.name,
           fileSize: file.size,
+          coverUrl: chosenCover?.coverUrl,
+          coverSource,
           coverKey,
         }),
       });
@@ -211,8 +253,13 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     file && form.title.trim() && form.authors.trim() && form.discipline.trim(),
   );
 
+  const preview = chosenCover?.coverUrl ?? coverUrl;
+
   return (
-    <form onSubmit={submit} className="shell grid gap-8 pb-20 pt-6 lg:grid-cols-[16rem_1fr] lg:gap-12">
+    <form
+      onSubmit={submit}
+      className="shell grid gap-8 pb-20 pt-6 lg:grid-cols-[16rem_1fr] lg:gap-12"
+    >
       <div className="lg:sticky lg:top-20 lg:self-start">
         {!file ? (
           <div
@@ -232,7 +279,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               "flex aspect-[2/3] cursor-pointer flex-col items-center justify-center gap-3 border border-dashed px-5 text-center transition-colors",
               dragging
                 ? "border-azul-luz bg-azul-luz/10"
-                : "border-line bg-ink-2/60 hover:border-white/35 hover:bg-ink-3",
+                : "border-line bg-ink-2/60 hover:border-white/35",
             )}
           >
             <UploadCloud className="h-6 w-6 text-dim" strokeWidth={1.2} />
@@ -256,15 +303,15 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
         ) : (
           <div className="space-y-3">
             <div className="relative aspect-[2/3] overflow-hidden border border-line bg-ink-2">
-              {coverUrl ? (
+              {preview ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={coverUrl} alt="Prévia da capa" className="h-full w-full object-cover" />
+                <img src={preview} alt="Prévia da capa" className="h-full w-full object-cover" />
               ) : (
                 <div className="grid h-full place-items-center">
                   {reading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-muted" strokeWidth={1.4} />
+                    <Loader2 className="h-5 w-5 animate-spin text-dim" strokeWidth={1.4} />
                   ) : (
-                    <FileText className="h-8 w-8 text-muted" strokeWidth={1.2} />
+                    <FileText className="h-6 w-6 text-dim" strokeWidth={1.2} />
                   )}
                 </div>
               )}
@@ -272,28 +319,89 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
                 type="button"
                 onClick={reset}
                 aria-label="Remover arquivo"
-                className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/60 backdrop-blur transition-colors hover:bg-black/80"
+                className="absolute right-2 top-2 grid h-7 w-7 place-items-center bg-black/70 backdrop-blur transition-colors hover:bg-black/90"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
 
-            <div className="text-xs text-muted">
+            <div className="text-[0.6875rem] text-dim">
               <p className="truncate text-bone">{file.name}</p>
-              <p className="mt-1.5">
+              <p className="mt-1">
                 {formatBytes(file.size)}
-                {pages ? ` · ${pages} páginas` : reading ? " · lendo o arquivo…" : ""}
+                {pages ? ` · ${pages} páginas` : reading ? " · lendo…" : ""}
               </p>
             </div>
 
             {progress !== null ? (
-              <div className="h-[3px] w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-[2px] w-full overflow-hidden bg-white/10">
                 <div
                   className="h-full bg-bone transition-[width] duration-300"
                   style={{ width: `${Math.round(progress * 100)}%` }}
                 />
               </div>
             ) : null}
+
+            <div className="border-t border-line pt-3">
+              <div className="flex items-center justify-between">
+                <span className="label">Capa</span>
+                {searchingCover ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-dim" strokeWidth={1.5} />
+                ) : null}
+              </div>
+
+              <div className="rail mt-2 gap-1.5 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setChosenCover(null)}
+                  className={cx(
+                    "h-[3.75rem] w-10 shrink-0 overflow-hidden border transition-colors",
+                    chosenCover === null ? "border-bone" : "border-line hover:border-white/40",
+                  )}
+                  title={coverUrl ? "Primeira página do PDF" : "Capa tipográfica"}
+                >
+                  {coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="grid h-full place-items-center text-[0.5rem] uppercase tracking-[0.1em] text-dim">
+                      Auto
+                    </span>
+                  )}
+                </button>
+
+                {candidates.map((candidate) => (
+                  <button
+                    key={candidate.key + candidate.coverId}
+                    type="button"
+                    onClick={() => setChosenCover(candidate)}
+                    title={`${candidate.title}${candidate.year ? ` · ${candidate.year}` : ""}`}
+                    className={cx(
+                      "h-[3.75rem] w-10 shrink-0 overflow-hidden border transition-colors",
+                      chosenCover?.coverId === candidate.coverId
+                        ? "border-bone"
+                        : "border-line hover:border-white/40",
+                    )}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={candidate.thumbUrl}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <p className="mt-1.5 text-[0.5625rem] uppercase tracking-[0.14em] text-dim">
+                {chosenCover
+                  ? "Capa da Open Library · nada é salvo no R2"
+                  : coverUrl
+                    ? "Primeira página do PDF"
+                    : "Capa tipográfica gerada"}
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -386,6 +494,16 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
+            <span className="label">ISBN (ajuda a achar a capa)</span>
+            <input
+              value={form.isbn}
+              onChange={(event) => set("isbn", event.target.value)}
+              className="field mt-1.5"
+              placeholder="9788522123456"
+            />
+          </label>
+
+          <label>
             <span className="label">Edição</span>
             <input
               value={form.edition}
@@ -424,7 +542,6 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               placeholder="Em duas ou três frases: o que o material cobre e para quem serve."
             />
           </label>
-
         </div>
 
         {error ? (
@@ -441,7 +558,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           >
             {sending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.6} />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.6} />
                 Enviando…
               </>
             ) : (

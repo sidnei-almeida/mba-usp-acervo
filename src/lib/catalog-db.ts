@@ -23,6 +23,9 @@ type Row = {
   arquivo_chave: string;
   arquivo_nome: string;
   arquivo_tamanho: string | number;
+  isbn: string | null;
+  capa_url: string | null;
+  capa_fonte: string | null;
   capa_chave: string | null;
   cor: string;
   enviado_por: string | null;
@@ -51,6 +54,9 @@ function toBook(row: Row): Book {
     fileKey: row.arquivo_chave,
     fileName: row.arquivo_nome,
     fileSize: Number(row.arquivo_tamanho),
+    isbn: row.isbn ?? undefined,
+    coverUrl: row.capa_url ?? undefined,
+    coverSource: (row.capa_fonte as Book["coverSource"]) ?? undefined,
     coverKey: row.capa_chave ?? undefined,
     accent: row.cor,
     uploadedById: row.enviado_por ?? undefined,
@@ -72,15 +78,17 @@ async function insert(book: Book) {
     insert into livros (
       id, slug, titulo, subtitulo, autores, ano, editora, edicao, idioma, area,
       formato, tags, descricao, paginas, arquivo_chave, arquivo_nome,
-      arquivo_tamanho, capa_chave, cor, enviado_por, enviado_por_nome, destaque,
-      downloads, criado_em
+      arquivo_tamanho, isbn, capa_url, capa_fonte, capa_chave, cor, enviado_por,
+      enviado_por_nome, destaque, downloads, criado_em
     ) values (
       ${book.id}, ${book.slug}, ${book.title}, ${book.subtitle ?? null},
       ${JSON.stringify(book.authors)}::jsonb, ${book.year ?? null},
       ${book.publisher ?? null}, ${book.edition ?? null}, ${book.language},
       ${book.discipline}, ${book.kind}, ${JSON.stringify(book.tags)}::jsonb,
       ${book.description ?? null}, ${book.pages ?? null}, ${book.fileKey},
-      ${book.fileName}, ${book.fileSize}, ${book.coverKey ?? null}, ${book.accent},
+      ${book.fileName}, ${book.fileSize}, ${book.isbn ?? null},
+      ${book.coverUrl ?? null}, ${book.coverSource ?? null},
+      ${book.coverKey ?? null}, ${book.accent},
       ${book.uploadedById ?? null}, ${book.uploadedBy ?? null},
       ${book.featured ?? false}, ${book.downloads}, ${book.createdAt}
     )
@@ -142,6 +150,9 @@ export const dbCatalog: CatalogRepository = {
         tags = ${JSON.stringify(next.tags)}::jsonb,
         descricao = ${next.description ?? null},
         paginas = ${next.pages ?? null},
+        isbn = ${next.isbn ?? null},
+        capa_url = ${next.coverUrl ?? null},
+        capa_fonte = ${next.coverSource ?? null},
         capa_chave = ${next.coverKey ?? null},
         cor = ${next.accent},
         destaque = ${next.featured ?? false},

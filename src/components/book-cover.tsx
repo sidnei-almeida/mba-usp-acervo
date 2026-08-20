@@ -23,7 +23,8 @@ export function BookCover({
   className?: string;
   priority?: boolean;
 }) {
-  const hasArt = Boolean(book.coverKey);
+  // Open Library artwork wins; the rendered first page is the fallback.
+  const artwork = book.coverUrl ?? (book.coverKey ? `/api/arquivo/${book.coverKey}` : null);
 
   return (
     <div
@@ -33,12 +34,13 @@ export function BookCover({
       )}
       style={{ containerType: "inline-size" }}
     >
-      {hasArt ? (
+      {artwork ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/api/arquivo/${book.coverKey}`}
+          src={artwork}
           alt={`Capa de ${book.title}`}
           loading={priority ? "eager" : "lazy"}
+          decoding="async"
           className="h-full w-full object-cover"
         />
       ) : (

@@ -27,6 +27,11 @@ export type Book = {
   fileKey: string;
   fileName: string;
   fileSize: number;
+  isbn?: string;
+  /** Remote artwork (Open Library); preferred over anything we store. */
+  coverUrl?: string;
+  coverSource?: CoverSource;
+  /** First page rendered at upload time, used when there is no remote cover. */
   coverKey?: string;
   accent: string;
   uploadedById?: string;
@@ -35,6 +40,9 @@ export type Book = {
   featured?: boolean;
   downloads: number;
 };
+
+export const COVER_SOURCES = ["openlibrary", "pdf", "gerada"] as const;
+export type CoverSource = (typeof COVER_SOURCES)[number];
 
 export type BookInput = Omit<
   Book,
