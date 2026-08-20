@@ -41,7 +41,7 @@ export type Book = {
   downloads: number;
 };
 
-export const COVER_SOURCES = ["openlibrary", "pdf", "gerada"] as const;
+export const COVER_SOURCES = ["openlibrary", "googlebooks", "pdf", "gerada"] as const;
 export type CoverSource = (typeof COVER_SOURCES)[number];
 
 export type BookInput = Omit<

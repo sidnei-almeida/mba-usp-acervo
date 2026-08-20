@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
-import { searchCovers } from "@/lib/openlibrary";
+import { searchCovers } from "@/lib/covers";
 
 export const runtime = "nodejs";
 
@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     title: params.get("titulo") ?? undefined,
     author: params.get("autor") ?? undefined,
     isbn: params.get("isbn") ?? undefined,
+    language: params.get("idioma") ?? undefined,
   });
 
-  return NextResponse.json({ candidates: candidates.slice(0, 8) });
+  return NextResponse.json({ candidates: candidates.slice(0, 10) });
 }

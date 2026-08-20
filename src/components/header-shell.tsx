@@ -42,7 +42,7 @@ export function HeaderShell({ user }: { user: { name: string } | null }) {
       <div className="shell flex h-[var(--header)] items-center justify-between gap-6">
         <div className="flex items-center gap-8">
           <Link href="/" aria-label="Início">
-            <BrandLockup className="transition-opacity hover:opacity-70" />
+            <BrandLockup inline className="transition-opacity hover:opacity-70" />
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex">

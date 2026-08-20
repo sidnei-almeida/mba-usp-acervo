@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BookCover } from "@/components/book-cover";
+import { coverSrc } from "@/lib/cover-src";
 import type { Book } from "@/lib/types";
 import { KIND_LABEL } from "@/lib/types";
 
 type Peek = { book: Book; x: number; y: number } | null;
 
 function Thumb({ book }: { book: Book }) {
-  const artwork = book.coverUrl ?? (book.coverKey ? `/api/arquivo/${book.coverKey}` : null);
+  const [failed, setFailed] = useState(false);
+  const src = failed ? null : coverSrc(book);
 
-  if (artwork) {
+  if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={artwork}
+        src={src}
         alt=""
         aria-hidden
         loading="lazy"
         decoding="async"
+        onError={() => setFailed(true)}
         className="h-full w-full object-cover"
       />
     );
@@ -29,9 +32,7 @@ function Thumb({ book }: { book: Book }) {
     <span
       aria-hidden
       className="block h-full w-full"
-      style={{
-        background: `linear-gradient(150deg, ${book.accent}, rgba(0,0,0,0.55))`,
-      }}
+      style={{ background: `linear-gradient(150deg, ${book.accent}, rgba(0,0,0,0.55))` }}
     />
   );
 }
