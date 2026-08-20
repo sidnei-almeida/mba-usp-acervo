@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { isContributor } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { COVER_PREFIX, FILE_PREFIX } from "@/lib/catalog";
 import { storage } from "@/lib/storage";
 import { createUploadToken } from "@/lib/upload-token";
@@ -19,8 +19,8 @@ type Payload = {
 };
 
 export async function POST(request: Request) {
-  if (!(await isContributor())) {
-    return NextResponse.json({ error: "Sessão não autorizada." }, { status: 401 });
+  if (!(await currentUser())) {
+    return NextResponse.json({ error: "Entre na sua conta para enviar." }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => ({}))) as Payload;

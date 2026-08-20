@@ -6,93 +6,94 @@ import { KIND_LABEL } from "@/lib/types";
 import { formatBytes } from "@/lib/utils";
 
 export function Hero({ book, total }: { book: Book; total: number }) {
-  const meta = [
-    KIND_LABEL[book.kind],
-    book.year ? String(book.year) : null,
-    book.pages ? `${book.pages} páginas` : null,
-    formatBytes(book.fileSize),
-  ].filter(Boolean);
+  const specs = [
+    { label: "Formato", value: KIND_LABEL[book.kind] },
+    { label: "Área", value: book.discipline },
+    { label: "Ano", value: book.year ? String(book.year) : "—" },
+    { label: "Páginas", value: book.pages ? String(book.pages) : "—" },
+    { label: "Arquivo", value: formatBytes(book.fileSize) },
+  ];
 
   return (
-    <section className="relative isolate min-h-[86svh] overflow-hidden pt-[4.5rem]">
+    <section className="relative isolate overflow-hidden border-b border-line pt-[var(--header)]">
       <div
         aria-hidden
         className="absolute inset-0 -z-20"
         style={{
-          background: `radial-gradient(85% 65% at 74% 6%, ${book.accent}a6 0%, ${book.accent}33 42%, transparent 70%), radial-gradient(55% 55% at 6% 92%, rgba(18,62,134,0.22), transparent 70%), linear-gradient(180deg, #0b0c0e 0%, #08090a 100%)`,
+          background: `radial-gradient(70% 60% at 72% 0%, ${book.accent}8c 0%, ${book.accent}26 42%, transparent 72%), linear-gradient(180deg,#0b0c0e,#08090a)`,
         }}
       />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/70 to-ink/20"
-      />
 
-      <div className="shell grid items-center gap-14 py-16 md:py-24 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20">
-        <div className="rise max-w-2xl">
-          <p className="eyebrow">Destaque da semana</p>
+      <div className="shell grid gap-8 py-10 md:py-14 lg:grid-cols-[minmax(0,1fr)_11rem_15rem] lg:items-end lg:gap-10">
+        <div className="rise">
+          <div className="flex items-center gap-3">
+            <span className="num">001</span>
+            <span className="h-px w-8 bg-line" />
+            <span className="label">Destaque da semana</span>
+          </div>
 
-          <h1 className="display mt-6 text-[clamp(2.75rem,7vw,5.25rem)]">
+          <h1 className="display mt-5 max-w-[16ch] text-[clamp(2rem,4.4vw,3.5rem)]">
             {book.title}
           </h1>
 
           {book.subtitle ? (
-            <p className="mt-5 max-w-lg text-lg leading-snug text-[#cfccc6] md:text-xl">
+            <p className="mt-3 max-w-md text-[0.9375rem] leading-snug text-[#b9bbbe]">
               {book.subtitle}
             </p>
           ) : null}
 
-          <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.75rem] uppercase tracking-[0.16em] text-muted">
-            <span className="text-bone">{book.authors.join(", ")}</span>
-            {meta.map((item) => (
-              <span key={item} className="flex items-center gap-3">
-                <span className="h-1 w-1 rounded-full bg-white/30" />
-                {item}
-              </span>
-            ))}
-          </div>
+          <p className="label label-bone mt-4">{book.authors.join(", ")}</p>
 
           {book.description ? (
-            <p className="mt-8 max-w-xl text-[0.9375rem] leading-relaxed text-[#b9b7b2]">
-              {book.description}
-            </p>
+            <p className="prose-sm mt-5 max-w-md">{book.description}</p>
           ) : null}
 
-          <div className="mt-10 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-2">
             <Link href={`/livro/${book.slug}/ler`} className="btn btn-solid">
-              <BookOpen className="h-4 w-4" strokeWidth={1.6} />
+              <BookOpen className="h-3.5 w-3.5" strokeWidth={1.6} />
               Ler agora
             </Link>
-            <a
-              href={`/api/arquivo/${book.fileKey}?download`}
-              className="btn btn-ghost"
-            >
-              <Download className="h-4 w-4" strokeWidth={1.6} />
-              Baixar PDF
+            <a href={`/api/arquivo/${book.fileKey}?download`} className="btn btn-ghost">
+              <Download className="h-3.5 w-3.5" strokeWidth={1.6} />
+              Baixar
             </a>
             <Link
               href="/acervo"
-              className="link-underline ml-2 inline-flex items-center gap-2 text-[0.75rem] uppercase tracking-[0.18em] text-muted hover:text-bone"
+              className="underline-grow ml-2 inline-flex items-center gap-1.5 text-[0.625rem] uppercase tracking-[0.2em] text-muted hover:text-bone"
             >
-              {total} títulos no acervo
-              <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {total} títulos
+              <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
             </Link>
           </div>
         </div>
 
-        <div className="rise relative mx-auto w-[62%] max-w-[20rem] lg:w-full lg:max-w-[24rem]" style={{ animationDelay: "160ms" }}>
-          <div
-            aria-hidden
-            className="absolute -inset-10 -z-10 blur-3xl"
-            style={{ background: `${book.accent}55` }}
-          />
+        <dl className="rise hidden self-end border-l border-line pl-6 lg:block">
+          {specs.map((spec) => (
+            <div
+              key={spec.label}
+              className="flex items-baseline justify-between gap-3 border-b border-line py-1.5 last:border-b-0"
+            >
+              <dt className="label">{spec.label}</dt>
+              <dd className="text-[0.6875rem] uppercase tracking-[0.08em] text-bone">
+                {spec.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <figure className="rise mx-auto w-[45%] max-w-[13rem] lg:mx-0 lg:w-full lg:max-w-none">
           <Link href={`/livro/${book.slug}`} className="block">
             <BookCover
               book={book}
               priority
-              className="shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)] transition-transform duration-700 hover:-translate-y-2"
+              className="shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:-translate-y-1"
             />
           </Link>
-        </div>
+          <figcaption className="mt-2.5 flex items-baseline justify-between border-t border-line pt-2">
+            <span className="num">fig. 01</span>
+            <span className="label">{book.publisher ?? "Acervo"}</span>
+          </figcaption>
+        </figure>
       </div>
     </section>
   );

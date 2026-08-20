@@ -29,6 +29,7 @@ export type Book = {
   fileSize: number;
   coverKey?: string;
   accent: string;
+  uploadedById?: string;
   uploadedBy?: string;
   createdAt: string;
   featured?: boolean;

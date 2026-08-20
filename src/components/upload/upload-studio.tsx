@@ -19,7 +19,6 @@ type Form = {
   kind: Kind;
   tags: string;
   description: string;
-  uploadedBy: string;
 };
 
 const EMPTY: Form = {
@@ -34,7 +33,6 @@ const EMPTY: Form = {
   kind: "livro",
   tags: "",
   description: "",
-  uploadedBy: "",
 };
 
 function titleFromFileName(name: string) {
@@ -190,7 +188,6 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           fileName: file.name,
           fileSize: file.size,
           coverKey,
-          uploadedBy: form.uploadedBy.trim() || undefined,
         }),
       });
 
@@ -210,11 +207,13 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     }
   };
 
-  const ready = Boolean(file && form.title.trim() && form.authors.trim() && form.discipline.trim());
+  const ready = Boolean(
+    file && form.title.trim() && form.authors.trim() && form.discipline.trim(),
+  );
 
   return (
-    <form onSubmit={submit} className="shell grid gap-14 pb-28 pt-10 lg:grid-cols-[22rem_1fr] lg:gap-20">
-      <div className="lg:sticky lg:top-28 lg:self-start">
+    <form onSubmit={submit} className="shell grid gap-8 pb-20 pt-6 lg:grid-cols-[16rem_1fr] lg:gap-12">
+      <div className="lg:sticky lg:top-20 lg:self-start">
         {!file ? (
           <div
             onDragOver={(event) => {
@@ -230,17 +229,17 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
             }}
             onClick={() => inputRef.current?.click()}
             className={cx(
-              "flex aspect-[2/3] cursor-pointer flex-col items-center justify-center gap-5 rounded-[4px] border border-dashed px-8 text-center transition-colors",
+              "flex aspect-[2/3] cursor-pointer flex-col items-center justify-center gap-3 border border-dashed px-5 text-center transition-colors",
               dragging
                 ? "border-azul-luz bg-azul-luz/10"
                 : "border-line bg-ink-2/60 hover:border-white/35 hover:bg-ink-3",
             )}
           >
-            <UploadCloud className="h-8 w-8 text-muted" strokeWidth={1.2} />
+            <UploadCloud className="h-6 w-6 text-dim" strokeWidth={1.2} />
             <div>
-              <p className="font-display text-2xl">Solte o PDF aqui</p>
-              <p className="mt-3 text-xs leading-relaxed text-muted">
-                Ou clique para escolher no computador. Até 200 MB por arquivo.
+              <p className="display text-lg">Solte o PDF aqui</p>
+              <p className="mt-2 text-[0.625rem] uppercase tracking-[0.14em] text-dim">
+                Clique para escolher · até 200 MB
               </p>
             </div>
             <input
@@ -255,8 +254,8 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
             />
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="relative aspect-[2/3] overflow-hidden rounded-[3px] border border-line bg-ink-2">
+          <div className="space-y-3">
+            <div className="relative aspect-[2/3] overflow-hidden border border-line bg-ink-2">
               {coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverUrl} alt="Prévia da capa" className="h-full w-full object-cover" />
@@ -299,47 +298,47 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
         )}
       </div>
 
-      <div className="max-w-2xl space-y-10">
-        <div className="grid gap-5 sm:grid-cols-2">
+      <div className="max-w-2xl space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
-            <span className="eyebrow">Título *</span>
+            <span className="label">Título *</span>
             <input
               value={form.title}
               onChange={(event) => set("title", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="Estatística Aplicada à Tomada de Decisão"
               required
             />
           </label>
 
           <label className="sm:col-span-2">
-            <span className="eyebrow">Subtítulo</span>
+            <span className="label">Subtítulo</span>
             <input
               value={form.subtitle}
               onChange={(event) => set("subtitle", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="Da inferência clássica aos modelos preditivos"
             />
           </label>
 
           <label className="sm:col-span-2">
-            <span className="eyebrow">Autores * (separe por vírgula)</span>
+            <span className="label">Autores * (separe por vírgula)</span>
             <input
               value={form.authors}
               onChange={(event) => set("authors", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="Fábio Miranda, Helena Duarte"
               required
             />
           </label>
 
           <label>
-            <span className="eyebrow">Área do curso *</span>
+            <span className="label">Área do curso *</span>
             <input
               value={form.discipline}
               onChange={(event) => set("discipline", event.target.value)}
               list="disciplinas"
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="Finanças"
               required
             />
@@ -351,11 +350,11 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="eyebrow">Formato</span>
+            <span className="label">Formato</span>
             <select
               value={form.kind}
               onChange={(event) => set("kind", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
             >
               {KINDS.map((kind) => (
                 <option key={kind} value={kind} className="bg-ink">
@@ -366,84 +365,75 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="eyebrow">Editora</span>
+            <span className="label">Editora</span>
             <input
               value={form.publisher}
               onChange={(event) => set("publisher", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="Editora Piracicaba"
             />
           </label>
 
           <label>
-            <span className="eyebrow">Ano</span>
+            <span className="label">Ano</span>
             <input
               value={form.year}
               onChange={(event) => set("year", event.target.value.replace(/\D/g, "").slice(0, 4))}
               inputMode="numeric"
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="2024"
             />
           </label>
 
           <label>
-            <span className="eyebrow">Edição</span>
+            <span className="label">Edição</span>
             <input
               value={form.edition}
               onChange={(event) => set("edition", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="3ª edição"
             />
           </label>
 
           <label>
-            <span className="eyebrow">Idioma</span>
+            <span className="label">Idioma</span>
             <input
               value={form.language}
               onChange={(event) => set("language", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
             />
           </label>
 
           <label className="sm:col-span-2">
-            <span className="eyebrow">Palavras-chave</span>
+            <span className="label">Palavras-chave</span>
             <input
               value={form.tags}
               onChange={(event) => set("tags", event.target.value)}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="valuation, fluxo de caixa, investimentos"
             />
           </label>
 
           <label className="sm:col-span-2">
-            <span className="eyebrow">Descrição</span>
+            <span className="label">Descrição</span>
             <textarea
               value={form.description}
               onChange={(event) => set("description", event.target.value)}
               rows={5}
-              className="field mt-3"
+              className="field mt-1.5"
               placeholder="Em duas ou três frases: o que o material cobre e para quem serve."
             />
           </label>
 
-          <label className="sm:col-span-2">
-            <span className="eyebrow">Enviado por</span>
-            <input
-              value={form.uploadedBy}
-              onChange={(event) => set("uploadedBy", event.target.value)}
-              className="field mt-3"
-              placeholder="Seu nome ou turma"
-            />
-          </label>
         </div>
 
         {error ? (
-          <p className="rounded-[4px] border border-[#7a3a2c] bg-[#2a1512] px-4 py-3 text-sm text-[#e5a08c]">
+          <p className="border border-[#6f3226] bg-[#22110e] px-3 py-2 text-[0.75rem] text-[#e5a08c]">
             {error}
           </p>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-4 border-t border-line pt-8">
+        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
           <button
             type="submit"
             disabled={!ready || sending}
@@ -458,7 +448,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               "Publicar no acervo"
             )}
           </button>
-          <p className="text-xs text-muted">
+          <p className="text-[0.6875rem] text-dim">
             Ao publicar, você confirma ter direito de compartilhar este material.
           </p>
         </div>

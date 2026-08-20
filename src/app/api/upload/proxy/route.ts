@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isContributor } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import { verifyUploadToken } from "@/lib/upload-token";
 
@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 
 /** Fallback upload path used when the driver cannot issue presigned URLs. */
 export async function PUT(request: Request) {
-  if (!(await isContributor())) {
-    return NextResponse.json({ error: "Sessão não autorizada." }, { status: 401 });
+  if (!(await currentUser())) {
+    return NextResponse.json({ error: "Entre na sua conta para enviar." }, { status: 401 });
   }
 
   const url = new URL(request.url);
