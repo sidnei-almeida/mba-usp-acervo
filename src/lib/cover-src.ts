@@ -1,8 +1,20 @@
 import type { Book } from "@/lib/types";
 
-/** Remote artwork always goes through our proxy; stored files are served directly. */
+/**
+ * The stored copy comes first — it is on our own storage and always there.
+ * The remote URL is only a fallback for records ingested before the copy
+ * existed, and it goes through the proxy.
+ */
 export function coverSrc(book: Pick<Book, "coverUrl" | "coverKey">) {
-  if (book.coverUrl) return `/api/capa?url=${encodeURIComponent(book.coverUrl)}`;
   if (book.coverKey) return `/api/arquivo/${book.coverKey}`;
+  if (book.coverUrl) return `/api/capa?url=${encodeURIComponent(book.coverUrl)}`;
+  return null;
+}
+
+/** Second chance used when the stored copy fails to load in the browser. */
+export function coverFallbackSrc(book: Pick<Book, "coverUrl" | "coverKey">) {
+  if (book.coverKey && book.coverUrl) {
+    return `/api/capa?url=${encodeURIComponent(book.coverUrl)}`;
+  }
   return null;
 }

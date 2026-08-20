@@ -103,12 +103,14 @@ export default async function HomePage() {
           <h2 className="text-[0.6875rem] uppercase tracking-[0.2em]">Coleções</h2>
         </div>
 
-        <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
+        {/* Borders per cell, not a filled gap grid: an incomplete last row
+            must read as empty space, never as a grey placeholder. */}
+        <div className="grid border-l border-t border-line sm:grid-cols-2 lg:grid-cols-4">
           {disciplines.map((discipline, index) => (
             <Link
               key={discipline.name}
               href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
-              className="group flex min-h-[7rem] flex-col justify-between bg-ink p-4 transition-colors hover:bg-ink-2"
+              className="group flex min-h-[7rem] flex-col justify-between border-b border-r border-line p-4 transition-colors hover:bg-ink-2"
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="num">{String(index + 1).padStart(2, "0")}</span>

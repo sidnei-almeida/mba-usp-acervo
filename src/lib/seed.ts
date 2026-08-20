@@ -1,4 +1,5 @@
 import { FILE_PREFIX, putSeedBooks } from "@/lib/catalog";
+import { ingestCover } from "@/lib/cover-store";
 import { bestCover } from "@/lib/covers";
 import { buildPlaceholderPdf } from "@/lib/mini-pdf";
 import { storage } from "@/lib/storage";
@@ -289,6 +290,9 @@ export async function seedCatalog() {
           language: seed.language === "Inglês" ? "eng" : "por",
         });
 
+    // Guardamos uma cópia da capa junto do acervo, para não depender das APIs.
+    const coverKey = cover ? await ingestCover(id, cover.coverUrl) : null;
+
     books.push({
       id,
       slug: slugify(seed.title),
@@ -307,6 +311,7 @@ export async function seedCatalog() {
       fileName,
       fileSize: pdf.byteLength,
       coverUrl: cover?.coverUrl,
+      coverKey: coverKey ?? undefined,
       coverSource: cover?.provider,
       accent: seed.featured ? "#16324F" : accentFor(seed.title + id),
       uploadedBy: "Silo",

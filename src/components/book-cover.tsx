@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SiloGlyph } from "@/components/brand/silo-glyph";
-import { coverSrc } from "@/lib/cover-src";
+import { coverFallbackSrc, coverSrc } from "@/lib/cover-src";
 import type { Book } from "@/lib/types";
 import { cx } from "@/lib/utils";
 
@@ -26,8 +26,9 @@ export function BookCover({
   className?: string;
   priority?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
-  const src = failed ? null : coverSrc(book);
+  // 0 = stored copy, 1 = provider URL, 2 = give up and draw the cover.
+  const [stage, setStage] = useState(0);
+  const src = stage === 0 ? coverSrc(book) : stage === 1 ? coverFallbackSrc(book) : null;
 
   return (
     <div
@@ -44,7 +45,7 @@ export function BookCover({
           alt={`Capa de ${book.title}`}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          onError={() => setFailed(true)}
+          onError={() => setStage((current) => current + 1)}
           className="h-full w-full object-cover"
         />
       ) : (
