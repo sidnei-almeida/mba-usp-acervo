@@ -1,4 +1,5 @@
-import { env, isR2Configured } from "@/lib/env";
+import { env, isBlobConfigured, isR2Configured } from "@/lib/env";
+import { createBlobDriver } from "./blob";
 import { createLocalDriver } from "./local";
 import { createR2Driver } from "./r2";
 
@@ -15,7 +16,7 @@ export type ObjectPayload = {
 };
 
 export interface StorageDriver {
-  readonly name: "r2" | "local";
+  readonly name: "r2" | "blob" | "local";
   put(key: string, body: Uint8Array | string, contentType: string): Promise<void>;
   get(key: string): Promise<ObjectPayload | null>;
   getText(key: string): Promise<string | null>;
@@ -31,13 +32,18 @@ let cached: StorageDriver | null = null;
 
 export function storage(): StorageDriver {
   if (cached) return cached;
-  // Falls back to the filesystem so the app still runs without R2 credentials.
-  cached = isR2Configured() ? createR2Driver() : createLocalDriver();
+  // Vercel Blob, then R2, then the filesystem so the app always runs.
+  cached = isBlobConfigured()
+    ? createBlobDriver()
+    : isR2Configured()
+      ? createR2Driver()
+      : createLocalDriver();
   return cached;
 }
 
-/** Public URL for an object, when the bucket is served by a custom domain. */
+/** Public URL for an object, when the store is served straight from a CDN. */
 export function publicUrl(key: string): string | null {
-  if (!env.r2.publicBaseUrl || !isR2Configured()) return null;
-  return `${env.r2.publicBaseUrl}/${key}`;
+  if (isBlobConfigured() && env.blobBaseUrl) return `${env.blobBaseUrl}/${key}`;
+  if (isR2Configured() && env.r2.publicBaseUrl) return `${env.r2.publicBaseUrl}/${key}`;
+  return null;
 }

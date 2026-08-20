@@ -13,10 +13,17 @@ export const env = {
     publicBaseUrl: read("R2_PUBLIC_BASE_URL")?.replace(/\/$/, ""),
     endpoint: read("R2_ENDPOINT"),
   },
+  blobToken: read("BLOB_READ_WRITE_TOKEN"),
+  blobStoreId: read("BLOB_STORE_ID"),
+  blobBaseUrl: read("NEXT_PUBLIC_BLOB_BASE_URL")?.replace(/\/$/, ""),
   sessionSecret: read("SESSION_SECRET") ?? "acervo-mba-usp-esalq-dev-secret",
   seedDemo: read("SEED_DEMO") !== "false",
   siteUrl: read("NEXT_PUBLIC_SITE_URL")?.replace(/\/$/, "") ?? "",
 };
+
+export function isBlobConfigured() {
+  return Boolean(env.blobToken);
+}
 
 export function isR2Configured() {
   const { accountId, accessKeyId, secretAccessKey, bucket, endpoint } = env.r2;

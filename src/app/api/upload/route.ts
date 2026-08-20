@@ -43,15 +43,31 @@ export async function POST(request: Request) {
       ? `${FILE_PREFIX}${draftId}/${safeName}.pdf`
       : `${COVER_PREFIX}${draftId}.jpg`;
 
+  const driver = storage().name;
+
+  // Three ways in, decided by the driver: a presigned PUT (R2), the client
+  // upload handshake (Vercel Blob) or a proxied PUT (local filesystem).
+  if (driver === "blob") {
+    return NextResponse.json({
+      draftId,
+      key,
+      contentType,
+      driver,
+      mode: "blob" as const,
+      handleUploadUrl: "/api/upload/blob",
+    });
+  }
+
   const signed = await storage().signedPutUrl(key, contentType);
 
   return NextResponse.json({
     draftId,
     key,
     contentType,
+    driver,
+    mode: "put" as const,
     uploadUrl:
       signed ??
       `/api/upload/proxy?key=${encodeURIComponent(key)}&token=${createUploadToken(key)}`,
-    driver: storage().name,
   });
 }
