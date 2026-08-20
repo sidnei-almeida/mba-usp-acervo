@@ -1,6 +1,12 @@
 import { neon } from "@neondatabase/serverless";
 
-const url = process.env.DATABASE_URL;
+// Neon and Vercel hand out the same string under different names depending on
+// how the project was created — accept all of them.
+const url =
+  process.env.DATABASE_URL ??
+  process.env.POSTGRES_URL ??
+  process.env.DATABASE_URL_UNPOOLED ??
+  process.env.POSTGRES_URL_NON_POOLING;
 
 export function isDatabaseConfigured() {
   return Boolean(url);
@@ -9,7 +15,7 @@ export function isDatabaseConfigured() {
 let client: ReturnType<typeof neon> | null = null;
 
 export function sql() {
-  if (!url) throw new Error("DATABASE_URL não configurada.");
+  if (!url) throw new Error("Nenhuma URL de Postgres configurada (DATABASE_URL/POSTGRES_URL).");
   if (!client) client = neon(url);
   return client;
 }
