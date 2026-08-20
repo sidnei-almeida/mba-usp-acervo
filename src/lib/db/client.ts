@@ -75,6 +75,9 @@ async function bootstrap() {
   await run`alter table livros add column if not exists isbn text`;
   await run`alter table livros add column if not exists capa_url text`;
   await run`alter table livros add column if not exists capa_fonte text`;
+  await run`alter table livros add column if not exists arquivo_tamanho_original bigint`;
+  await run`alter table livros add column if not exists otimizacao text`;
+  await run`alter table livros add column if not exists otimizado_em timestamptz`;
 
   await run`create index if not exists livros_area_idx on livros (area)`;
   await run`create index if not exists livros_criado_em_idx on livros (criado_em desc)`;

@@ -571,6 +571,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </button>
           <p className="text-[0.6875rem] text-dim">
             Ao publicar, você confirma ter direito de compartilhar este material.
+            O PDF é compactado logo depois do envio, sem perder o texto.
           </p>
         </div>
       </div>

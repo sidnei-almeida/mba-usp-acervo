@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@/lib/auth";
 import { createBook, filterBooks, listBooks, updateBook } from "@/lib/catalog";
 import { ingestCover } from "@/lib/cover-store";
+import { optimizeStoredPdf } from "@/lib/pdf-pipeline";
 import { COVER_SOURCES, KINDS } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -60,6 +61,10 @@ export async function POST(request: Request) {
     uploadedById: user.id,
     uploadedBy: user.name ?? user.username,
   });
+
+  // The heavy pass runs after the response: publishing stays instant and the
+  // bucket still ends up with the lighter file.
+  after(() => optimizeStoredPdf(book.id));
 
   // Keeps a copy of the chosen artwork so the record stops depending on the
   // provider being reachable later.

@@ -23,6 +23,9 @@ type Row = {
   arquivo_chave: string;
   arquivo_nome: string;
   arquivo_tamanho: string | number;
+  arquivo_tamanho_original: string | number | null;
+  otimizacao: string | null;
+  otimizado_em: string | null;
   isbn: string | null;
   capa_url: string | null;
   capa_fonte: string | null;
@@ -54,6 +57,11 @@ function toBook(row: Row): Book {
     fileKey: row.arquivo_chave,
     fileName: row.arquivo_nome,
     fileSize: Number(row.arquivo_tamanho),
+    originalSize: row.arquivo_tamanho_original
+      ? Number(row.arquivo_tamanho_original)
+      : undefined,
+    optimization: row.otimizacao ?? undefined,
+    optimizedAt: row.otimizado_em ? new Date(row.otimizado_em).toISOString() : undefined,
     isbn: row.isbn ?? undefined,
     coverUrl: row.capa_url ?? undefined,
     coverSource: (row.capa_fonte as Book["coverSource"]) ?? undefined,
@@ -78,15 +86,17 @@ async function insert(book: Book) {
     insert into livros (
       id, slug, titulo, subtitulo, autores, ano, editora, edicao, idioma, area,
       formato, tags, descricao, paginas, arquivo_chave, arquivo_nome,
-      arquivo_tamanho, isbn, capa_url, capa_fonte, capa_chave, cor, enviado_por,
-      enviado_por_nome, destaque, downloads, criado_em
+      arquivo_tamanho, arquivo_tamanho_original, otimizacao, otimizado_em, isbn,
+      capa_url, capa_fonte, capa_chave, cor, enviado_por, enviado_por_nome,
+      destaque, downloads, criado_em
     ) values (
       ${book.id}, ${book.slug}, ${book.title}, ${book.subtitle ?? null},
       ${JSON.stringify(book.authors)}::jsonb, ${book.year ?? null},
       ${book.publisher ?? null}, ${book.edition ?? null}, ${book.language},
       ${book.discipline}, ${book.kind}, ${JSON.stringify(book.tags)}::jsonb,
       ${book.description ?? null}, ${book.pages ?? null}, ${book.fileKey},
-      ${book.fileName}, ${book.fileSize}, ${book.isbn ?? null},
+      ${book.fileName}, ${book.fileSize}, ${book.originalSize ?? null},
+      ${book.optimization ?? null}, ${book.optimizedAt ?? null}, ${book.isbn ?? null},
       ${book.coverUrl ?? null}, ${book.coverSource ?? null},
       ${book.coverKey ?? null}, ${book.accent},
       ${book.uploadedById ?? null}, ${book.uploadedBy ?? null},
@@ -150,6 +160,10 @@ export const dbCatalog: CatalogRepository = {
         tags = ${JSON.stringify(next.tags)}::jsonb,
         descricao = ${next.description ?? null},
         paginas = ${next.pages ?? null},
+        arquivo_tamanho = ${next.fileSize},
+        arquivo_tamanho_original = ${next.originalSize ?? null},
+        otimizacao = ${next.optimization ?? null},
+        otimizado_em = ${next.optimizedAt ?? null},
         isbn = ${next.isbn ?? null},
         capa_url = ${next.coverUrl ?? null},
         capa_fonte = ${next.coverSource ?? null},

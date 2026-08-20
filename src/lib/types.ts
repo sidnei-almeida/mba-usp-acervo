@@ -27,6 +27,10 @@ export type Book = {
   fileKey: string;
   fileName: string;
   fileSize: number;
+  /** Weight before the optimisation pipeline ran. */
+  originalSize?: number;
+  optimization?: string;
+  optimizedAt?: string;
   isbn?: string;
   /** Remote artwork (Open Library); preferred over anything we store. */
   coverUrl?: string;

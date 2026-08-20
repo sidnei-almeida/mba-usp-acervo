@@ -42,7 +42,15 @@ export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
     { label: "Ano", value: book.year ? String(book.year) : undefined },
     { label: "Idioma", value: book.language },
     { label: "Páginas", value: book.pages ? String(book.pages) : undefined },
-    { label: "Arquivo", value: formatBytes(book.fileSize) },
+    {
+      label: "Arquivo",
+      value:
+        book.originalSize && book.originalSize > book.fileSize
+          ? `${formatBytes(book.fileSize)} · −${Math.round(
+              (1 - book.fileSize / book.originalSize) * 100,
+            )}%`
+          : formatBytes(book.fileSize),
+    },
     { label: "Enviado por", value: book.uploadedBy },
     { label: "No acervo desde", value: formatDate(book.createdAt) },
     { label: "Downloads", value: String(book.downloads) },
