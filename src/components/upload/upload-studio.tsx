@@ -301,6 +301,10 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     file && form.title.trim() && form.authors.trim() && form.discipline.trim(),
   );
 
+  // Rough tell for a badly exported scan: weight per page.
+  const perPage = file && pages ? file.size / pages : 0;
+  const heavy = perPage > 1.2 * 1024 * 1024;
+
   const preview = chosenCover
     ? `/api/capa?url=${encodeURIComponent(chosenCover.coverUrl)}`
     : coverUrl;
@@ -382,6 +386,15 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
                 {pages ? ` · ${pages} páginas` : reading ? " · lendo…" : ""}
               </p>
             </div>
+
+            {heavy ? (
+              <p className="border border-[#6b5a1f] bg-[#1e1a0e] px-3 py-2 text-[0.6875rem] leading-relaxed text-[#d8b451]">
+                Esse PDF está pesado para o número de páginas
+                {` (${formatBytes(perPage)} por página)`}. Antes de enviar, vale
+                rodar <code className="text-bone">npm run preparar {file.name}</code>{" "}
+                e subir a versão otimizada — costuma cair 70% sem perder texto.
+              </p>
+            ) : null}
 
             {progress !== null ? (
               <div className="h-[2px] w-full overflow-hidden bg-white/10">

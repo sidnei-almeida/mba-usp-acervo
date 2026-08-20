@@ -18,6 +18,23 @@ export type OptimizeResult = {
   saved: number;
 };
 
+let availability: Promise<{ gs: boolean; qpdf: boolean }> | null = null;
+
+/** Which optimisers exist on this host. Vercel ships neither. */
+export function availableTools() {
+  if (!availability) {
+    availability = (async () => ({
+      gs: await exists(binary("gs"), ["--version"]),
+      qpdf: await exists(binary("qpdf"), ["--version"]),
+    }))();
+  }
+  return availability;
+}
+
+async function exists(command: string, args: string[]) {
+  return run(command, args);
+}
+
 function binary(name: "gs" | "qpdf") {
   const override =
     name === "gs" ? process.env.GHOSTSCRIPT_PATH : process.env.QPDF_PATH;
@@ -118,6 +135,24 @@ export async function optimizePdf(input: Uint8Array): Promise<OptimizeResult> {
 
   if (process.env.PDF_OPTIMIZE === "false") return base;
 
+  const tools = await availableTools();
+  if (!tools.gs && !tools.qpdf) {
+    // Only the structural rewrite is possible; it is not worth moving the file
+    // around for it.
+    const structural = await structuralRewrite(input);
+    const pagesBefore = await pageCount(input);
+    if (structural && (await accept(structural, originalSize, pagesBefore))) {
+      return {
+        bytes: structural,
+        method: "estrutural",
+        originalSize,
+        size: structural.byteLength,
+        saved: 1 - structural.byteLength / originalSize,
+      };
+    }
+    return base;
+  }
+
   const pages = await pageCount(input);
   if (pages === null) return base;
 
@@ -148,6 +183,8 @@ export async function optimizePdf(input: Uint8Array): Promise<OptimizeResult> {
     let best = base;
 
     for (const attempt of attempts) {
+      if (attempt.method === "ghostscript" && !tools.gs) continue;
+      if (attempt.method === "qpdf" && !tools.qpdf) continue;
       if (!(await run(attempt.command, attempt.args))) continue;
 
       let candidate: Uint8Array;

@@ -140,11 +140,15 @@ src/lib/
   (`/acervo?vista=indice`) — linhas numeradas com a capa aparecendo ao lado do
   cursor.
 - **Limite**: 200 MB por arquivo.
+- **Compacte antes de enviar**: `npm run preparar livro.pdf` gera
+  `livro-otimizado.pdf` ao lado do original, conferindo que a contagem de
+  páginas não mudou. É o caminho recomendado — o arquivo já sobe leve e não
+  gasta transferência à toa. A sala de envio avisa quando o PDF escolhido está
+  pesado demais para o número de páginas.
 - **Compactação na Vercel**: a plataforma não traz Ghostscript nem qpdf, então
-  ali a pipeline só consegue a regravação estrutural. Para os ganhos grandes,
-  rode `npm run otimizar` na sua máquina: ele baixa os PDFs ainda não
-  otimizados, compacta com o gs local e devolve a versão enxuta ao
-  armazenamento, atualizando o registro.
+  a pipeline do servidor é pulada por lá em vez de baixar e reenviar o arquivo
+  por um ganho estrutural de poucos por cento. Para o que já está no
+  armazenamento sem otimizar, use `npm run otimizar`.
 - **Compactação**: depois de publicado, o PDF passa por uma pipeline em camadas
   — Ghostscript (reamostra imagens para 170 dpi e faz subset das fontes), qpdf
   (recompressão sem perda) e, se nenhum binário existir na máquina, uma
@@ -163,7 +167,8 @@ src/lib/
 | `npm run db` | mostra tabelas e contagens do Postgres |
 | `npm run capas -- --usuario X --senha Y` | baixa e guarda capas que faltam |
 | `npm run pdfs -- --usuario X --senha Y` | compacta os PDFs pelo servidor |
-| `npm run otimizar` | compacta com o Ghostscript local e devolve ao armazenamento |
+| `npm run preparar arquivo.pdf` | compacta um PDF **antes** de enviá-lo |
+| `npm run otimizar` | compacta o que já está no armazenamento |
 
 O `postinstall` copia o worker do pdf.js para `public/`.
 

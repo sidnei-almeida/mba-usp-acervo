@@ -1,5 +1,5 @@
 import { getBookById, updateBook } from "@/lib/catalog";
-import { optimizePdf } from "@/lib/pdf-optimize";
+import { availableTools, optimizePdf } from "@/lib/pdf-optimize";
 import { storage } from "@/lib/storage";
 
 const MAX_MB = Number(process.env.PDF_OPTIMIZE_MAX_MB ?? 120);
@@ -7,7 +7,7 @@ const MAX_MB = Number(process.env.PDF_OPTIMIZE_MAX_MB ?? 120);
 export type PipelineReport = {
   id: string;
   title: string;
-  status: "otimizado" | "já enxuto" | "grande demais" | "erro";
+  status: "otimizado" | "já enxuto" | "grande demais" | "sem ferramentas" | "erro";
   method?: string;
   before?: number;
   after?: number;
@@ -46,6 +46,12 @@ export async function optimizeStoredPdf(bookId: string): Promise<PipelineReport>
 
   const base = { id: book.id, title: book.title };
   if (book.optimizedAt) return { ...base, status: "já enxuto", method: book.optimization };
+
+  // Without gs or qpdf the only gain would be structural, which does not pay
+  // for downloading and re-uploading the file — on Vercel Blob that traffic is
+  // metered. The pre-upload tool handles those hosts instead.
+  const tools = await availableTools();
+  if (!tools.gs && !tools.qpdf) return { ...base, status: "sem ferramentas" };
   if (book.fileSize > MAX_MB * 1024 * 1024) return { ...base, status: "grande demais" };
 
   try {
