@@ -129,11 +129,11 @@ export default function BrandPage() {
       </Section>
 
       <Section index="03" title="Paleta">
-        <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4">
           {PALETTE.map((color) => (
             <div
               key={color.hex}
-              className="flex min-h-[8.5rem] flex-col justify-between p-4"
+              className="flex min-h-[8.5rem] flex-col justify-between p-4 outline outline-1 -outline-offset-[0.5px] outline-[color:var(--color-line)]"
               style={{ background: color.hex, color: color.text }}
             >
               <span className="text-[0.6875rem] uppercase tracking-[0.16em]">{color.name}</span>

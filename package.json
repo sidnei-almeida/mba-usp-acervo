@@ -9,7 +9,7 @@
     "lint": "eslint",
     "postinstall": "node scripts/copy-pdf-worker.mjs",
     "db": "node --env-file=.env scripts/db.mjs",
-    "capas": "node --env-file=.env scripts/capas.mjs"
+    "capas": "node scripts/capas.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1115.0",

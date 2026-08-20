@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BookCover } from "@/components/book-cover";
-import { coverSrc } from "@/lib/cover-src";
+import { coverFallbackSrc, coverSrc } from "@/lib/cover-src";
 import type { Book } from "@/lib/types";
 import { KIND_LABEL } from "@/lib/types";
 
 type Peek = { book: Book; x: number; y: number } | null;
 
 function Thumb({ book }: { book: Book }) {
-  const [failed, setFailed] = useState(false);
-  const src = failed ? null : coverSrc(book);
+  const [stage, setStage] = useState(0);
+  const src = stage === 0 ? coverSrc(book) : stage === 1 ? coverFallbackSrc(book) : null;
 
   if (src) {
     return (
@@ -22,7 +22,7 @@ function Thumb({ book }: { book: Book }) {
         aria-hidden
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(true)}
+        onError={() => setStage((current) => current + 1)}
         className="h-full w-full object-cover"
       />
     );
@@ -64,7 +64,7 @@ export function BookLedger({ books }: { books: Book[] }) {
             {String(index + 1).padStart(3, "0")}
           </span>
 
-          <span className="block h-10 w-7 self-center overflow-hidden border border-line bg-ink-3">
+          <span className="block h-[2.85rem] w-8 self-center overflow-hidden border border-line bg-ink-3">
             <Thumb book={book} />
           </span>
 

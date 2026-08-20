@@ -7,19 +7,26 @@ import { BookCard } from "@/components/book-card";
 import type { Book } from "@/lib/types";
 import { cx } from "@/lib/utils";
 
+const STEP_MS = 2600;
+const RESUME_MS = 7000;
+
 export function BookRail({
   title,
   index,
   books,
   href,
+  autoplay = true,
 }: {
   title: string;
   index?: string;
   books: Book[];
   href?: string;
+  autoplay?: boolean;
 }) {
   const railRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: false });
+  const [paused, setPaused] = useState(false);
+  const resumeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const measure = useCallback(() => {
     const node = railRef.current;
@@ -36,11 +43,46 @@ export function BookRail({
     return () => window.removeEventListener("resize", measure);
   }, [measure]);
 
+  /** Width of one card plus the gap, so the rail always lands on a card. */
+  const step = useCallback(() => {
+    const node = railRef.current;
+    const card = node?.firstElementChild as HTMLElement | null;
+    if (!node || !card) return 240;
+    return card.getBoundingClientRect().width + 12;
+  }, []);
+
+  // Any manual interaction wins; the rail picks itself up again later.
+  const hold = useCallback(() => {
+    setPaused(true);
+    if (resumeRef.current) clearTimeout(resumeRef.current);
+    resumeRef.current = setTimeout(() => setPaused(false), RESUME_MS);
+  }, []);
+
   const nudge = (direction: 1 | -1) => {
     const node = railRef.current;
     if (!node) return;
-    node.scrollBy({ left: direction * Math.max(node.clientWidth * 0.7, 240) });
+    hold();
+    node.scrollBy({ left: direction * step() * 2 });
   };
+
+  useEffect(() => {
+    if (!autoplay || books.length < 3) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const timer = setInterval(() => {
+      const node = railRef.current;
+      if (!node || paused || document.hidden) return;
+
+      const atEnd = node.scrollLeft + node.clientWidth >= node.scrollWidth - 8;
+      node.scrollTo({ left: atEnd ? 0 : node.scrollLeft + step(), behavior: "smooth" });
+    }, STEP_MS);
+
+    return () => clearInterval(timer);
+  }, [autoplay, books.length, paused, step]);
+
+  useEffect(() => () => {
+    if (resumeRef.current) clearTimeout(resumeRef.current);
+  }, []);
 
   if (books.length === 0) return null;
 
@@ -86,7 +128,16 @@ export function BookRail({
         </div>
       </div>
 
-      <div ref={railRef} onScroll={measure} className="rail shell pb-1">
+      <div
+        ref={railRef}
+        onScroll={measure}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocusCapture={hold}
+        onPointerDown={hold}
+        onWheel={hold}
+        className="rail shell pb-1"
+      >
         {books.map((book, position) => (
           <BookCard
             key={book.id}

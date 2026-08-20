@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@/lib/auth";
-import { createBook, filterBooks, listBooks } from "@/lib/catalog";
+import { createBook, filterBooks, listBooks, updateBook } from "@/lib/catalog";
+import { ingestCover } from "@/lib/cover-store";
 import { COVER_SOURCES, KINDS } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -59,5 +60,16 @@ export async function POST(request: Request) {
     uploadedById: user.id,
     uploadedBy: user.name ?? user.username,
   });
+
+  // Keeps a copy of the chosen artwork so the record stops depending on the
+  // provider being reachable later.
+  if (book.coverUrl && !book.coverKey) {
+    const coverKey = await ingestCover(book.id, book.coverUrl);
+    if (coverKey) {
+      const updated = await updateBook(book.id, { coverKey });
+      if (updated) return NextResponse.json({ book: updated }, { status: 201 });
+    }
+  }
+
   return NextResponse.json({ book }, { status: 201 });
 }

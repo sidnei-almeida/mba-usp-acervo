@@ -41,7 +41,8 @@ carrega o arquivo.
 
 ```
 livros/<id>/<arquivo>.pdf    arquivo original enviado
-capas/<id>.jpg               primeira página renderizada no navegador
+capas/<id>.jpg               capa: da Open Library/Google Books ou a primeira
+                             página renderizada no navegador
 catalogo/<id>.json           metadados (apenas no modo sem banco)
 catalogo/_index.json         índice (apenas no modo sem banco)
 ```
@@ -107,8 +108,10 @@ src/lib/
   título+autor, em português e inglês) e guarda apenas a URL — nada de imagem no
   R2. Sem resultado, entra a primeira página do PDF renderizada no navegador
   (pdf.js) e, por último, uma capa tipográfica gerada com cor determinística.
-  Toda capa remota é servida pelo proxy `/api/capa`, que valida a origem e
-  guarda em cache; se ainda assim falhar, o componente cai na capa gerada.
+  A capa encontrada é **baixada uma vez e guardada no R2** junto dos PDFs
+  (`capas/<id>.jpg`), então a página nunca depende do provedor estar no ar.
+  Registros antigos ainda apontando só para a URL usam o proxy `/api/capa`, que
+  valida a origem e guarda em cache; se tudo falhar, entra a capa gerada.
   O acesso anônimo ao Google Books tem cota diária baixa — defina
   `GOOGLE_BOOKS_API_KEY` para melhorar a cobertura de edições brasileiras.
 - **Leitor**: `/livro/<slug>/ler` embute o PDF em tela cheia com cabeçalho
@@ -127,6 +130,7 @@ src/lib/
 | `npm run start` | sobe o build |
 | `npm run lint` | ESLint |
 | `npm run db` | mostra tabelas e contagens do Postgres |
+| `npm run capas -- --usuario X --senha Y` | baixa e guarda capas que faltam |
 
 O `postinstall` copia o worker do pdf.js para `public/`.
 
