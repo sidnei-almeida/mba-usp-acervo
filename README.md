@@ -56,14 +56,24 @@ B2_BUCKET=silo-acervo
 B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
 ```
 
-A região sai do próprio endpoint (`us-west-004`). O envio do navegador vai
-direto ao bucket por URL assinada, o que exige liberar CORS — o B2 configura
-isso pela CLI, não pela API S3:
+A região sai do próprio endpoint (`us-east-005`, por exemplo). O envio do
+navegador vai direto ao bucket por URL assinada, o que exige liberar CORS:
 
 ```bash
-npm run b2-cors -- --bucket silo-acervo --origem https://seu-dominio
-b2 bucket update --cors-rules "$(cat cors.json)" silo-acervo allPrivate
+npm run b2-cors                 # libera para qualquer origem
+npm run b2-cors -- --origem https://seu-dominio
+npm run b2-cors -- --ver        # mostra as regras atuais
 ```
+
+Dois detalhes que custam tempo se pegarem de surpresa:
+
+- O preset de CORS do painel do B2 libera só `GET` e `HEAD`. O envio precisa de
+  `s3_put` e do header `content-type`, que é o que o script acima grava.
+- Quando o bucket já tem regras nativas, a API S3 recusa `PutBucketCors` com
+  *"The bucket contains B2 Native CORS rules"*. Por isso o script fala com a API
+  nativa do B2, não com a S3.
+- A master application key **não funciona** na API S3: use uma chave de
+  aplicação criada à parte, com o bucket selecionado.
 
 ## Cloudflare R2
 
