@@ -3,6 +3,7 @@ import { Instrument_Serif, Inter_Tight } from "next/font/google";
 import { LibrarianChat } from "@/components/librarian-chat";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { siteOrigin } from "@/lib/site";
 import { assetOrigin } from "@/lib/storage";
 import "./globals.css";
 
@@ -20,6 +21,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  // Sem base absoluta, o Next emite caminhos relativos e o mensageiro
+  // descarta a imagem do cartão sem avisar.
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: "Silo — Acervo MBA Data Science",
     template: "%s — Silo",

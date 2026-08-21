@@ -24,9 +24,30 @@ export async function generateMetadata({
   const { slug } = await params;
   const book = await getBookBySlug(slug);
   if (!book) return { title: "Título não encontrado" };
+
+  const description =
+    book.description ?? `${book.title} — ${book.authors.join(", ")}`;
+  const url = `/livro/${book.slug}`;
+
   return {
     title: book.title,
-    description: book.description ?? `${book.title} — ${book.authors.join(", ")}`,
+    description,
+    alternates: { canonical: url },
+    // A imagem sai de opengraph-image.tsx, ao lado deste arquivo.
+    openGraph: {
+      type: "book",
+      title: book.title,
+      description,
+      url,
+      siteName: "Silo",
+      locale: "pt_BR",
+      authors: book.authors,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: book.title,
+      description,
+    },
   };
 }
 
