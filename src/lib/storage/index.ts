@@ -1,7 +1,7 @@
-import { env, isBlobConfigured, isR2Configured } from "@/lib/env";
+import { env, isBlobConfigured, isS3Configured } from "@/lib/env";
 import { createBlobDriver } from "./blob";
 import { createLocalDriver } from "./local";
-import { createR2Driver } from "./r2";
+import { createS3Driver } from "./s3";
 
 export type StoredObject = {
   key: string;
@@ -16,7 +16,7 @@ export type ObjectPayload = {
 };
 
 export interface StorageDriver {
-  readonly name: "r2" | "blob" | "local";
+  readonly name: "s3" | "blob" | "local";
   put(key: string, body: Uint8Array | string, contentType: string): Promise<void>;
   get(key: string): Promise<ObjectPayload | null>;
   getText(key: string): Promise<string | null>;
@@ -32,11 +32,11 @@ let cached: StorageDriver | null = null;
 
 export function storage(): StorageDriver {
   if (cached) return cached;
-  // Vercel Blob, then R2, then the filesystem so the app always runs.
+  // Vercel Blob, then any S3-compatible store, then the filesystem.
   cached = isBlobConfigured()
     ? createBlobDriver()
-    : isR2Configured()
-      ? createR2Driver()
+    : isS3Configured()
+      ? createS3Driver()
       : createLocalDriver();
   return cached;
 }
@@ -44,6 +44,6 @@ export function storage(): StorageDriver {
 /** Public URL for an object, when the store is served straight from a CDN. */
 export function publicUrl(key: string): string | null {
   if (isBlobConfigured() && env.blobBaseUrl) return `${env.blobBaseUrl}/${key}`;
-  if (isR2Configured() && env.r2.publicBaseUrl) return `${env.r2.publicBaseUrl}/${key}`;
+  if (isS3Configured() && env.s3.publicBaseUrl) return `${env.s3.publicBaseUrl}/${key}`;
   return null;
 }

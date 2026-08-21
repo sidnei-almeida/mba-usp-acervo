@@ -28,8 +28,9 @@ drivers escolhidos nesta ordem:
    navegador direto para a store pelo handshake de client upload, sem passar
    pelo limite de 4,5 MB das funções. Defina também `NEXT_PUBLIC_BLOB_BASE_URL`
    para as capas saírem do CDN sem invocar função.
-2. **Cloudflare R2** — quando existem as credenciais abaixo; usa URL assinada
-   para envio e download.
+2. **Armazenamento S3-compatível** — Backblaze B2, Cloudflare R2, MinIO. Usa
+   URL assinada tanto para enviar quanto para baixar, então **o bucket pode (e
+   deve) ser privado**.
 3. **Sistema de arquivos** (`.data/`) — sem nenhuma credencial, para
    desenvolvimento.
 
@@ -38,6 +39,31 @@ drivers escolhidos nesta ordem:
 1 GB de armazenamento, 10 GB de transferência, 10 mil operações simples e 2 mil
 avançadas por mês. Estourar qualquer um deles bloqueia a store por 30 dias, então
 vale acompanhar em Observability e manter os PDFs compactados.
+
+## Backblaze B2
+
+Bucket **privado** — público não muda o preço e só abriria os PDFs para
+qualquer um. O plano gratuito dá 10 GB de armazenamento e egress grátis até 3×
+o armazenamento médio do mês.
+
+1. Crie o bucket e uma *application key* com acesso a ele.
+2. No `.env.local`:
+
+```
+B2_KEY_ID=005...
+B2_APPLICATION_KEY=K005...
+B2_BUCKET=silo-acervo
+B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
+```
+
+A região sai do próprio endpoint (`us-west-004`). O envio do navegador vai
+direto ao bucket por URL assinada, o que exige liberar CORS — o B2 configura
+isso pela CLI, não pela API S3:
+
+```bash
+npm run b2-cors -- --bucket silo-acervo --origem https://seu-dominio
+b2 bucket update --cors-rules "$(cat cors.json)" silo-acervo allPrivate
+```
 
 ## Cloudflare R2
 
@@ -168,6 +194,7 @@ src/lib/
 | `npm run capas -- --usuario X --senha Y` | baixa e guarda capas que faltam |
 | `npm run pdfs -- --usuario X --senha Y` | compacta os PDFs pelo servidor |
 | `npm run preparar arquivo.pdf` | compacta um PDF **antes** de enviá-lo |
+| `npm run b2-cors -- --bucket X` | gera as regras de CORS do Backblaze B2 |
 | `npm run otimizar` | compacta o que já está no armazenamento |
 
 O `postinstall` copia o worker do pdf.js para `public/`.

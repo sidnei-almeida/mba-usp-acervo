@@ -22,7 +22,11 @@ export async function GET(request: Request, context: Context) {
   const signed = await storage().signedGetUrl(key, download ? book?.fileName : undefined);
   if (signed) {
     if (download && book) await registerDownload(book.id);
-    return NextResponse.redirect(signed, 302);
+    const response = NextResponse.redirect(signed, 302);
+    // Shorter than the signature lifetime, so a cached redirect never points
+    // at an expired URL.
+    if (!download) response.headers.set("Cache-Control", "private, max-age=600");
+    return response;
   }
 
   const object = await storage().get(key);

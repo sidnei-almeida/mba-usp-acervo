@@ -3,15 +3,41 @@ function read(name: string): string | undefined {
   return value && value.length > 0 ? value : undefined;
 }
 
+function firstOf(...names: string[]) {
+  for (const name of names) {
+    const value = read(name);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+/** Region is part of the Backblaze host (s3.us-west-004.backblazeb2.com). */
+function regionFromEndpoint(endpoint?: string) {
+  if (!endpoint) return undefined;
+  const match = endpoint.match(/^https?:\/\/s3\.([a-z0-9-]+)\.backblazeb2\.com/i);
+  return match?.[1];
+}
+
+const endpoint =
+  firstOf("S3_ENDPOINT", "B2_ENDPOINT", "R2_ENDPOINT") ??
+  (read("R2_ACCOUNT_ID")
+    ? `https://${read("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`
+    : undefined);
+
 export const env = {
-  r2: {
-    accountId: read("R2_ACCOUNT_ID"),
-    accessKeyId: read("R2_ACCESS_KEY_ID"),
-    secretAccessKey: read("R2_SECRET_ACCESS_KEY"),
-    bucket: read("R2_BUCKET"),
-    /** Optional custom domain serving the bucket publicly (https://cdn.exemplo.com). */
-    publicBaseUrl: read("R2_PUBLIC_BASE_URL")?.replace(/\/$/, ""),
-    endpoint: read("R2_ENDPOINT"),
+  /** Any S3-compatible store: Cloudflare R2, Backblaze B2, MinIO. */
+  s3: {
+    endpoint,
+    accessKeyId: firstOf("S3_ACCESS_KEY_ID", "B2_KEY_ID", "R2_ACCESS_KEY_ID"),
+    secretAccessKey: firstOf(
+      "S3_SECRET_ACCESS_KEY",
+      "B2_APPLICATION_KEY",
+      "R2_SECRET_ACCESS_KEY",
+    ),
+    bucket: firstOf("S3_BUCKET", "B2_BUCKET", "R2_BUCKET"),
+    region: firstOf("S3_REGION", "B2_REGION") ?? regionFromEndpoint(endpoint) ?? "auto",
+    /** Custom domain serving the bucket publicly, when there is one. */
+    publicBaseUrl: firstOf("S3_PUBLIC_BASE_URL", "R2_PUBLIC_BASE_URL")?.replace(/\/$/, ""),
   },
   blobToken: read("BLOB_READ_WRITE_TOKEN"),
   blobStoreId: read("BLOB_STORE_ID"),
@@ -25,7 +51,7 @@ export function isBlobConfigured() {
   return Boolean(env.blobToken);
 }
 
-export function isR2Configured() {
-  const { accountId, accessKeyId, secretAccessKey, bucket, endpoint } = env.r2;
-  return Boolean(accessKeyId && secretAccessKey && bucket && (accountId || endpoint));
+export function isS3Configured() {
+  const { accessKeyId, secretAccessKey, bucket, endpoint } = env.s3;
+  return Boolean(accessKeyId && secretAccessKey && bucket && endpoint);
 }

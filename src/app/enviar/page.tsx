@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { UploadStudio } from "@/components/upload/upload-studio";
 import { currentUser } from "@/lib/auth";
 import { disciplinesOf, listBooks } from "@/lib/catalog";
-import { isR2Configured } from "@/lib/env";
+import { storage } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +35,10 @@ export default async function UploadPage() {
             Publicando como {user.name ?? user.username}
           </p>
         </div>
-        {!isR2Configured() ? (
+        {storage().name === "local" ? (
           <p className="mt-3 text-[0.6875rem] text-[#d8b451]">
-            Modo local: sem credenciais do R2, os arquivos ficam em .data/ neste
-            computador.
+            Modo local: sem credenciais de armazenamento, os arquivos ficam em
+            .data/ neste computador.
           </p>
         ) : null}
       </section>

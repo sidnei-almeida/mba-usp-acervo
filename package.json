@@ -12,7 +12,8 @@
     "capas": "node scripts/manutencao.mjs --tarefa capas",
     "pdfs": "node scripts/manutencao.mjs --tarefa pdfs",
     "otimizar": "node --env-file=.env scripts/otimizar.mjs",
-    "preparar": "node scripts/preparar.mjs"
+    "preparar": "node scripts/preparar.mjs",
+    "b2-cors": "node scripts/b2-cors.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1115.0",
