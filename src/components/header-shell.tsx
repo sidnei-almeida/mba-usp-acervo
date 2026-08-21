@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { RadioPlayer } from "@/components/radio-player";
 import { BrandLockup } from "@/components/brand/brand-lockup";
 import { cx } from "@/lib/utils";
 
@@ -67,6 +68,8 @@ export function HeaderShell({ user }: { user: SessionUser | null }) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <RadioPlayer />
+
           <Link
             href="/acervo?foco=busca"
             aria-label="Buscar"
