@@ -465,16 +465,26 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Camada de texto do leitor: transparente sobre o canvas, mas selecionável —
-   é o que permite copiar uma citação e destacar a busca sem redesenhar a página. */
+   é o que permite copiar uma citação e destacar a busca sem redesenhar a página.
+   As regras abaixo são o contrato do TextLayer do pdf.js 6: cada trecho chega
+   com --font-height, --scale-x e --rotate no style inline e conta com estas
+   declarações para virar tamanho e transformação. Sem elas o texto herda o
+   tamanho do corpo da página e escorrega para fora do que está desenhado. */
 .pdf-text-layer {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: clip;
   line-height: 1;
+  text-align: initial;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
+  caret-color: CanvasText;
   z-index: 2;
+
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
 }
 
 .pdf-text-layer span,
@@ -483,7 +493,23 @@ input[type="range"]::-moz-range-thumb {
   white-space: pre;
   cursor: text;
   color: transparent;
-  transform-origin: 0 0;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.pdf-text-layer > :not(.markedContent),
+.pdf-text-layer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+/* Agrupador de conteúdo marcado: não ocupa lugar, só embrulha os trechos. */
+.pdf-text-layer .markedContent {
+  display: contents;
 }
 
 .pdf-text-layer ::selection {

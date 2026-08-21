@@ -112,9 +112,9 @@ export function PdfReader({
         // Camada de texto: dá seleção, cópia e destaque de busca.
         const camada = document.createElement("div");
         camada.className = "pdf-text-layer";
-        // O TextLayer posiciona cada trecho a partir desta variável; sem ela o
+        // O TextLayer dimensiona cada trecho a partir desta variável; sem ela o
         // texto selecionável fica deslocado do que está desenhado no canvas.
-        camada.style.setProperty("--scale-factor", String(scale));
+        camada.style.setProperty("--total-scale-factor", String(scale));
         camada.style.width = `${Math.floor(viewport.width)}px`;
         camada.style.height = `${Math.floor(viewport.height)}px`;
         host.append(camada);
@@ -431,6 +431,9 @@ export function PdfReader({
 function destacar(camada: HTMLElement, alvo: string) {
   const agulha = alvo.toLowerCase();
   for (const span of Array.from(camada.querySelectorAll("span"))) {
+    // Conteúdo marcado vira um span que só embrulha outros; trocar os filhos
+    // dele apagaria os trechos posicionados lá dentro.
+    if (span.firstElementChild) continue;
     const texto = span.textContent ?? "";
     if (!texto.toLowerCase().includes(agulha)) continue;
 
