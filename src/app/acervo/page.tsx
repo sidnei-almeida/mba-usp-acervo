@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { CatalogBrowser } from "@/components/catalog-browser";
 import { disciplinesOf, listBooks } from "@/lib/catalog";
+import { withCoverUrls } from "@/lib/cover-url";
 import { EMPTY_FILTERS, type Filters, type SortKey } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ function first(value: string | string[] | undefined) {
 
 export default async function CatalogPage({ searchParams }: PageProps<"/acervo">) {
   const params = await searchParams;
-  const books = await listBooks();
+  const books = await withCoverUrls(await listBooks());
 
   const sort = first(params.ordem);
   const initialFilters: Filters = {

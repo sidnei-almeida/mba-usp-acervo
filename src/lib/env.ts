@@ -45,6 +45,18 @@ export const env = {
   sessionSecret: read("SESSION_SECRET") ?? "acervo-mba-usp-esalq-dev-secret",
   seedDemo: read("SEED_DEMO") !== "false",
   siteUrl: read("NEXT_PUBLIC_SITE_URL")?.replace(/\/$/, "") ?? "",
+  /**
+   * The single account allowed to curate the shelf. The password has no
+   * fallback on purpose: a default here would live in the repository history
+   * forever. Without ADMIN_PASSWORD set, the curator account is not created.
+   */
+  adminUsername: read("ADMIN_USERNAME") ?? "silo_adm",
+  adminPassword: read("ADMIN_PASSWORD"),
+  groqApiKey: firstOf("GROQ_API_KEY", "GROQ_KEY"),
+  /** Smallest model on the account; the catalogue task does not need more. */
+  groqModel: read("GROQ_MODEL") ?? "openai/gpt-oss-20b",
+  /** Conversation needs more room than cataloguing does. */
+  groqChatModel: read("GROQ_CHAT_MODEL") ?? "openai/gpt-oss-120b",
 };
 
 export function isBlobConfigured() {

@@ -16,6 +16,10 @@ export function Hero({ book, total }: { book: Book; total: number }) {
 
   return (
     <section className="relative isolate overflow-hidden border-b border-line">
+      {/* The one image that must be there when the page paints. */}
+      {book.coverSrc ? (
+        <link rel="preload" as="image" href={book.coverSrc} fetchPriority="high" />
+      ) : null}
       {/* The artwork itself lights the page, MUBI-style, behind a heavy scrim. */}
       {book.coverUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -39,7 +43,7 @@ export function Hero({ book, total }: { book: Book; total: number }) {
       <div className="shell pt-[var(--header)]">
         <div className="flex items-center gap-3 border-b border-line py-3">
           <span className="num">001</span>
-          <span className="label">Destaque da semana</span>
+          <span className="label">Destaque</span>
           <span className="ml-auto hidden text-[0.625rem] uppercase tracking-[0.2em] text-dim sm:block">
             {book.publisher ?? "Acervo"}
           </span>

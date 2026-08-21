@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from "@/lib/auth";
-import { findUserByUsername, publicUser, verifyPassword } from "@/lib/users";
+import {
+  ensureAdminAccount,
+  findUserByUsername,
+  publicUser,
+  verifyPassword,
+} from "@/lib/users";
 
 export const runtime = "nodejs";
 
@@ -15,6 +20,9 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Informe usuário e senha." }, { status: 400 });
   }
+
+  // First run of a deployment: the curator is created here, not by a migration.
+  await ensureAdminAccount();
 
   const stored = await findUserByUsername(parsed.data.username);
   const valid = stored && (await verifyPassword(parsed.data.password, stored.passwordHash));

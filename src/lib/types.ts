@@ -37,6 +37,8 @@ export type Book = {
   coverSource?: CoverSource;
   /** First page rendered at upload time, used when there is no remote cover. */
   coverKey?: string;
+  /** Filled in at render time by the server; never persisted. */
+  coverSrc?: string;
   accent: string;
   uploadedById?: string;
   uploadedBy?: string;

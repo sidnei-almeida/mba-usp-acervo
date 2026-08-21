@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { upload as blobUpload } from "@vercel/blob/client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, Loader2, UploadCloud, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { FileText, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
+import { UploadGuide } from "@/components/upload/upload-guide";
 import type { CoverCandidate } from "@/lib/covers";
 import { readPdfPreview } from "@/lib/pdf-client";
 import { KINDS, KIND_LABEL, type CoverSource, type Kind } from "@/lib/types";
@@ -38,6 +39,25 @@ const EMPTY: Form = {
   tags: "",
   description: "",
 };
+
+const AI_PREF = "silo:ajuda-ia";
+const prefListeners = new Set<() => void>();
+
+function subscribeAiPref(notify: () => void) {
+  prefListeners.add(notify);
+  return () => {
+    prefListeners.delete(notify);
+  };
+}
+
+function readAiPref() {
+  return window.localStorage.getItem(AI_PREF) === "1";
+}
+
+function writeAiPref(value: boolean) {
+  window.localStorage.setItem(AI_PREF, value ? "1" : "0");
+  for (const notify of prefListeners) notify();
+}
 
 function titleFromFileName(name: string) {
   return name
@@ -128,13 +148,93 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
+  const [pdfText, setPdfText] = useState("");
+  // Kept outside React so it survives navigation without a hydration mismatch.
+  const aiOn = useSyncExternalStore(subscribeAiPref, readAiPref, () => false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  // Fields the assistant wrote, so the form can mark them as suggestions.
+  const [aiFields, setAiFields] = useState<Set<keyof Form>>(new Set());
+
   const [candidates, setCandidates] = useState<CoverCandidate[]>([]);
   const [searchingCover, setSearchingCover] = useState(false);
   // null = first page of the PDF (or the generated cover when there is none).
   const [chosenCover, setChosenCover] = useState<CoverCandidate | null>(null);
 
-  const set = (key: keyof Form, value: string) =>
+  const set = (key: keyof Form, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+    // Once a human edits a field it stops being a suggestion.
+    setAiFields((current) => {
+      if (!current.has(key)) return current;
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  };
+
+  const toggleAi = (value: boolean) => {
+    writeAiPref(value);
+    if (!value) setAiNote(null);
+  };
+
+  /**
+   * Sends the front matter, never the file. Only empty fields are filled, so
+   * asking for help can never overwrite something already typed.
+   */
+  const askAi = useCallback(
+    async (text: string, fileName: string) => {
+      if (!text || text.length < 120) {
+        setAiNote("Este PDF não tem camada de texto (escaneado). Preencha à mão.");
+        return;
+      }
+
+      setAiBusy(true);
+      setAiNote(null);
+      try {
+        const response = await fetch("/api/livros/sugerir", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, fileName }),
+        });
+        const data = (await response.json()) as {
+          fields?: Partial<Record<keyof Form, string>>;
+          error?: string;
+        };
+        if (!response.ok || !data.fields) {
+          setAiNote(data.error ?? "A IA não conseguiu ler este arquivo.");
+          return;
+        }
+
+        const written = new Set<keyof Form>();
+        setForm((current) => {
+          const next = { ...current };
+          for (const [key, value] of Object.entries(data.fields!) as [keyof Form, string][]) {
+            if (!value) continue;
+            const existing = current[key].trim();
+            // The title arrives pre-filled from the file name; that is a guess,
+            // not an answer, so the assistant may replace it.
+            const guessed = key === "title" && existing === titleFromFileName(fileName);
+            if (existing && !guessed) continue;
+            if (key === "kind") next.kind = value as Kind;
+            else next[key] = value;
+            written.add(key);
+          }
+          return next;
+        });
+        setAiFields(written);
+        setAiNote(
+          written.size > 0
+            ? `${written.size} ${written.size === 1 ? "campo preenchido" : "campos preenchidos"} — confira antes de publicar.`
+            : "Nada a acrescentar: os campos já estavam preenchidos.",
+        );
+      } catch {
+        setAiNote("Não foi possível falar com a IA agora.");
+      } finally {
+        setAiBusy(false);
+      }
+    },
+    [],
+  );
 
   // Cover lookup follows what is typed, debounced, in both catalogues.
   useEffect(() => {
@@ -189,12 +289,14 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
       setPages(preview.pages);
       setCoverBlob(preview.coverBlob);
       setCoverUrl(preview.coverUrl);
+      setPdfText(preview.text);
+      if (aiOn) void askAi(preview.text, candidate.name);
     } catch {
       setPages(null);
     } finally {
       setReading(false);
     }
-  }, []);
+  }, [aiOn, askAi]);
 
   const reset = () => {
     if (coverUrl) URL.revokeObjectURL(coverUrl);
@@ -203,6 +305,9 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     setCoverBlob(null);
     setCoverUrl(null);
     setProgress(null);
+    setPdfText("");
+    setAiNote(null);
+    setAiFields(new Set());
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -304,6 +409,20 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
   // Rough tell for a badly exported scan: weight per page.
   const perPage = file && pages ? file.size / pages : 0;
   const heavy = perPage > 1.2 * 1024 * 1024;
+
+  /** Field caption, flagged when the value on screen came from the assistant. */
+  const fieldLabel = (field: keyof Form, text: string) => (
+    <span className="label inline-flex items-center gap-1.5">
+      {text}
+      {aiFields.has(field) ? (
+        <Sparkles
+          className="h-2.5 w-2.5 text-azul-luz"
+          strokeWidth={2}
+          aria-label="Preenchido pela IA"
+        />
+      ) : null}
+    </span>
+  );
 
   const preview = chosenCover
     ? `/api/capa?url=${encodeURIComponent(chosenCover.coverUrl)}`
@@ -470,9 +589,66 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
       </div>
 
       <div className="max-w-2xl space-y-6">
+        <UploadGuide />
+
+        <div className="border border-line">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <Sparkles className="h-4 w-4 shrink-0 text-dim" strokeWidth={1.4} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[0.8125rem] text-bone">Ajuda da IA</span>
+              <span className="block text-[0.6875rem] leading-snug text-dim">
+                Lê as primeiras páginas do PDF e preenche os campos vazios no
+                padrão do acervo. Você confere e corrige antes de publicar.
+              </span>
+            </span>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={aiOn}
+              aria-label="Ajuda da IA"
+              onClick={() => toggleAi(!aiOn)}
+              className={cx(
+                "relative h-5 w-9 shrink-0 rounded-full border transition-colors",
+                aiOn ? "border-azul-luz bg-azul-luz/30" : "border-line bg-white/5",
+              )}
+            >
+              <span
+                className={cx(
+                  "absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full transition-all duration-200",
+                  aiOn ? "left-[1.25rem] bg-azul-luz" : "left-[0.15rem] bg-dim",
+                )}
+              />
+            </button>
+          </div>
+
+          {aiOn && file ? (
+            <div className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-2.5">
+              <button
+                type="button"
+                onClick={() => void askAi(pdfText, file.name)}
+                disabled={aiBusy || reading}
+                className="btn btn-ghost h-7 px-3 text-[0.625rem] disabled:pointer-events-none disabled:opacity-40"
+              >
+                {aiBusy ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" strokeWidth={1.6} />
+                    Lendo o PDF…
+                  </>
+                ) : (
+                  "Preencher com a IA"
+                )}
+              </button>
+              {aiNote ? (
+                <p className="min-w-0 flex-1 text-[0.6875rem] leading-snug text-dim">{aiNote}</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
-            <span className="label">Título *</span>
+            {fieldLabel("title", "Título *")}
             <input
               value={form.title}
               onChange={(event) => set("title", event.target.value)}
@@ -483,7 +659,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label className="sm:col-span-2">
-            <span className="label">Subtítulo</span>
+            {fieldLabel("subtitle", "Subtítulo")}
             <input
               value={form.subtitle}
               onChange={(event) => set("subtitle", event.target.value)}
@@ -493,7 +669,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label className="sm:col-span-2">
-            <span className="label">Autores * (separe por vírgula)</span>
+            {fieldLabel("authors", "Autores * (separe por vírgula)")}
             <input
               value={form.authors}
               onChange={(event) => set("authors", event.target.value)}
@@ -504,7 +680,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">Área do curso *</span>
+            {fieldLabel("discipline", "Área do curso *")}
             <input
               value={form.discipline}
               onChange={(event) => set("discipline", event.target.value)}
@@ -521,7 +697,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">Formato</span>
+            {fieldLabel("kind", "Formato")}
             <select
               value={form.kind}
               onChange={(event) => set("kind", event.target.value)}
@@ -536,7 +712,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">Editora</span>
+            {fieldLabel("publisher", "Editora")}
             <input
               value={form.publisher}
               onChange={(event) => set("publisher", event.target.value)}
@@ -546,7 +722,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">Ano</span>
+            {fieldLabel("year", "Ano")}
             <input
               value={form.year}
               onChange={(event) => set("year", event.target.value.replace(/\D/g, "").slice(0, 4))}
@@ -557,7 +733,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">ISBN (ajuda a achar a capa)</span>
+            {fieldLabel("isbn", "ISBN (ajuda a achar a capa)")}
             <input
               value={form.isbn}
               onChange={(event) => set("isbn", event.target.value)}
@@ -567,7 +743,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">Edição</span>
+            {fieldLabel("edition", "Edição")}
             <input
               value={form.edition}
               onChange={(event) => set("edition", event.target.value)}
@@ -577,7 +753,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label>
-            <span className="label">Idioma</span>
+            {fieldLabel("language", "Idioma")}
             <input
               value={form.language}
               onChange={(event) => set("language", event.target.value)}
@@ -586,7 +762,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label className="sm:col-span-2">
-            <span className="label">Palavras-chave</span>
+            {fieldLabel("tags", "Palavras-chave")}
             <input
               value={form.tags}
               onChange={(event) => set("tags", event.target.value)}
@@ -596,7 +772,7 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
           </label>
 
           <label className="sm:col-span-2">
-            <span className="label">Descrição</span>
+            {fieldLabel("description", "Descrição")}
             <textarea
               value={form.description}
               onChange={(event) => set("description", event.target.value)}

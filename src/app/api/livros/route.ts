@@ -1,8 +1,19 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@/lib/auth";
-import { createBook, filterBooks, listBooks, updateBook } from "@/lib/catalog";
+import { createBook, disciplinesOf, filterBooks, listBooks, updateBook } from "@/lib/catalog";
 import { ingestCover } from "@/lib/cover-store";
+import {
+  normalizeAuthors,
+  normalizeDescription,
+  normalizeDiscipline,
+  normalizeEdition,
+  normalizeIsbn,
+  normalizeLanguage,
+  normalizePublisher,
+  normalizeTags,
+  normalizeTitle,
+} from "@/lib/normalize";
 import { optimizeStoredPdf } from "@/lib/pdf-pipeline";
 import { COVER_SOURCES, KINDS } from "@/lib/types";
 
@@ -56,8 +67,23 @@ export async function POST(request: Request) {
     );
   }
 
+  // House style is applied here, not in the form: the contributor should not
+  // have to fight formatting rules to get a file onto the shelf.
+  const input = parsed.data;
+  const known = disciplinesOf(await listBooks()).map((entry) => entry.name);
+
   const book = await createBook({
-    ...parsed.data,
+    ...input,
+    title: normalizeTitle(input.title),
+    subtitle: input.subtitle ? normalizeTitle(input.subtitle) : undefined,
+    authors: normalizeAuthors(input.authors),
+    publisher: input.publisher ? normalizePublisher(input.publisher) : undefined,
+    edition: input.edition ? normalizeEdition(input.edition) : undefined,
+    isbn: input.isbn ? normalizeIsbn(input.isbn) : undefined,
+    language: normalizeLanguage(input.language),
+    discipline: normalizeDiscipline(input.discipline, known),
+    tags: normalizeTags(input.tags),
+    description: input.description ? normalizeDescription(input.description) : undefined,
     uploadedById: user.id,
     uploadedBy: user.name ?? user.username,
   });

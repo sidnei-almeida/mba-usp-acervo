@@ -2,6 +2,7 @@ import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { nanoid } from "nanoid";
 import { ensureSchema, isDatabaseConfigured, sql } from "@/lib/db/client";
+import { env } from "@/lib/env";
 import { storage } from "@/lib/storage";
 
 const scryptAsync = promisify(scrypt) as (
@@ -18,6 +19,8 @@ export type User = {
   name?: string;
   role: "admin" | "membro";
   createdAt: string;
+  /** Stored WebP portrait; the glyph stands in when there is none. */
+  avatarKey?: string;
 };
 
 type StoredUser = User & { passwordHash: string };
@@ -36,8 +39,15 @@ export async function verifyPassword(password: string, stored: string) {
   return derived.length === expected.length && timingSafeEqual(derived, expected);
 }
 
-export function publicUser({ id, username, name, role, createdAt }: StoredUser): User {
-  return { id, username, name, role, createdAt };
+export function publicUser({
+  id,
+  username,
+  name,
+  role,
+  createdAt,
+  avatarKey,
+}: StoredUser): User {
+  return { id, username, name, role, createdAt, avatarKey };
 }
 
 function normalize(username: string) {
@@ -83,6 +93,7 @@ type UserRow = {
   senha_hash: string;
   papel: "admin" | "membro";
   criado_em: string;
+  foto: string | null;
 };
 
 function fromRow(row: UserRow): StoredUser {
@@ -93,6 +104,7 @@ function fromRow(row: UserRow): StoredUser {
     role: row.papel,
     createdAt: new Date(row.criado_em).toISOString(),
     passwordHash: row.senha_hash,
+    avatarKey: row.foto ?? undefined,
   };
 }
 
@@ -138,14 +150,13 @@ export async function createUser(input: {
 }): Promise<User> {
   const username = normalize(input.username);
   const passwordHash = await hashPassword(input.password);
-  // The first account to register administers the shelf.
-  const role = (await countUsers()) === 0 ? "admin" : "membro";
 
   const user: StoredUser = {
     id: nanoid(12),
     username,
     name: input.name?.trim() || undefined,
-    role,
+    // Curation is never granted by signing up; see ensureAdminAccount.
+    role: "membro",
     createdAt: new Date().toISOString(),
     passwordHash,
   };
@@ -162,4 +173,114 @@ export async function createUser(input: {
             ${user.role}, ${user.createdAt})
   `;
   return publicUser(user);
+}
+
+// --- The curator -----------------------------------------------------------
+
+/** The one account that curates the shelf. Nobody else can register it. */
+export const ADMIN_USERNAME = normalize(env.adminUsername);
+
+let warnedAboutAdmin = false;
+
+export function isReservedUsername(username: string) {
+  return normalize(username) === ADMIN_USERNAME;
+}
+
+async function setRole(user: StoredUser, role: StoredUser["role"]) {
+  if (!isDatabaseConfigured()) {
+    await jsonCreate({ ...user, role });
+    return;
+  }
+  const run = await db();
+  await run`update usuarios set papel = ${role} where id = ${user.id}`;
+}
+
+/**
+ * Makes sure the curator exists and still holds the role, creating it on first
+ * run. Idempotent, and cheap enough to call on every sign-in attempt — which is
+ * exactly when a fresh deployment needs it to have happened.
+ */
+export async function ensureAdminAccount(): Promise<void> {
+  // No password configured means no curator: better an archive without an
+  // administrator than one whose password is public.
+  if (!env.adminPassword) {
+    if (!warnedAboutAdmin) {
+      warnedAboutAdmin = true;
+      console.warn("[silo] ADMIN_PASSWORD não configurada — a conta de curadoria não será criada.");
+    }
+    return;
+  }
+
+  const existing = await findUserByUsername(ADMIN_USERNAME);
+
+  if (existing) {
+    // A role edited by hand in the database is put back where it belongs.
+    if (existing.role !== "admin") await setRole(existing, "admin");
+    return;
+  }
+
+  const user: StoredUser = {
+    id: nanoid(12),
+    username: ADMIN_USERNAME,
+    name: "Curadoria Silo",
+    role: "admin",
+    createdAt: new Date().toISOString(),
+    passwordHash: await hashPassword(env.adminPassword),
+  };
+
+  if (!isDatabaseConfigured()) {
+    await jsonCreate(user);
+    return;
+  }
+
+  const run = await db();
+  await run`
+    insert into usuarios (id, usuario, nome, senha_hash, papel, criado_em)
+    values (${user.id}, ${user.username}, ${user.name ?? null}, ${user.passwordHash},
+            ${user.role}, ${user.createdAt})
+    on conflict (usuario) do nothing
+  `;
+}
+
+export const AVATAR_PREFIX = "avatares/";
+
+/** Where a member's portrait lives. One key per account, overwritten on change. */
+export function avatarKeyFor(userId: string) {
+  return `${AVATAR_PREFIX}${userId}.webp`;
+}
+
+export async function setAvatarKey(userId: string, key: string | null) {
+  if (!isDatabaseConfigured()) {
+    const user = await jsonFindById(userId);
+    if (!user) return null;
+    const next = { ...user, avatarKey: key ?? undefined };
+    await jsonCreate(next);
+    return publicUser(next);
+  }
+
+  const run = await db();
+  const rows = (await run`
+    update usuarios set foto = ${key} where id = ${userId} returning *
+  `) as UserRow[];
+  return rows.length ? publicUser(fromRow(rows[0])) : null;
+}
+
+/** Display names and portraits for a set of contributors, in one round trip. */
+export async function findUsersByIds(ids: string[]): Promise<Map<string, User>> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const found = new Map<string, User>();
+  if (unique.length === 0) return found;
+
+  if (!isDatabaseConfigured()) {
+    for (const id of unique) {
+      const user = await jsonFindById(id);
+      if (user) found.set(id, publicUser(user));
+    }
+    return found;
+  }
+
+  const run = await db();
+  const rows = (await run`select * from usuarios where id = any(${unique})`) as UserRow[];
+  for (const row of rows) found.set(row.id, publicUser(fromRow(row)));
+  return found;
 }

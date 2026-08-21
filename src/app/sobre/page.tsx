@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     title: "Envie o PDF",
-    body: "Arraste o arquivo, confirme os dados da obra e pronto. O upload vai direto para o Cloudflare R2, sem passar por servidor intermediário.",
+    body: "Arraste o arquivo, confirme os dados da obra e pronto. O PDF é compactado e vai direto para o armazenamento do acervo, sem passar por servidor intermediário.",
   },
   {
     title: "A turma usa",
@@ -80,6 +80,9 @@ export default function AboutPage() {
           </Link>
           <Link href="/criar-conta" className="btn btn-ghost">
             Criar conta
+          </Link>
+          <Link href="/faq" className="btn btn-ghost">
+            Perguntas frequentes
           </Link>
         </div>
       </section>

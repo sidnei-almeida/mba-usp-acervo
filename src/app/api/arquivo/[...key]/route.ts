@@ -4,7 +4,7 @@ import { storage } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
-const ALLOWED_PREFIXES = ["livros/", "capas/"];
+const ALLOWED_PREFIXES = ["livros/", "capas/", "avatares/"];
 
 type Context = { params: Promise<{ key: string[] }> };
 
