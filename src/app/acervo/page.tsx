@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Acervo completo",
-  description: "Todos os livros, apostilas, casos e artigos do MBA USP/Esalq.",
+  description: "Todos os livros, apostilas, casos e artigos do MBA em Data Science.",
 };
 
 function first(value: string | string[] | undefined) {

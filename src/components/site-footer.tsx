@@ -41,7 +41,7 @@ export function SiteFooter() {
         <div className="max-w-xs">
           <BrandLockup size="md" />
           <p className="prose-sm mt-4">
-            Silo é a biblioteca mantida por alunos e ex-alunos do MBA USP/Esalq.
+            Silo é a biblioteca mantida por alunos e ex-alunos do MBA em Data Science.
             Um lugar só para o material que circula entre turmas.
           </p>
           <a
@@ -73,7 +73,7 @@ export function SiteFooter() {
 
       <div className="shell flex flex-col gap-2 border-t border-line py-4 md:flex-row md:items-center md:justify-between">
         <p className="text-[0.625rem] uppercase tracking-[0.16em] text-dim">
-          Iniciativa independente de alunos · sem vínculo oficial com USP, Esalq ou Fealq
+          Iniciativa independente de alunos · sem vínculo com instituição de ensino
         </p>
         <p className="num">© {new Date().getFullYear()}</p>
       </div>

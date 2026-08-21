@@ -422,6 +422,38 @@ input[type="number"]::-webkit-outer-spin-button {
   color: #fff;
 }
 
+/* Camada de texto do leitor: transparente sobre o canvas, mas selecionável —
+   é o que permite copiar uma citação e destacar a busca sem redesenhar a página. */
+.pdf-text-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+}
+
+.pdf-text-layer span,
+.pdf-text-layer br {
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  color: transparent;
+  transform-origin: 0 0;
+}
+
+.pdf-text-layer ::selection {
+  background: rgba(63, 123, 234, 0.4);
+}
+
+.pdf-marca {
+  background: rgba(201, 162, 39, 0.45);
+  color: transparent;
+  border-radius: 1px;
+}
+
 /* A cover still arriving: the grain of the shelf, a glyph holding the place and
    one pass of light across it. Same vocabulary as the rest of the site — no
    grey blocks, no spinners. */

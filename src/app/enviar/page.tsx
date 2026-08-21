@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Enviar material",
-  description: "Envie livros, apostilas e casos em PDF para o acervo do MBA USP/Esalq.",
+  description: "Envie livros, apostilas e casos em PDF para o acervo do MBA em Data Science.",
 };
 
 export default async function UploadPage() {

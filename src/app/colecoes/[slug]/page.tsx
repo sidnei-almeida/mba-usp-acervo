@@ -21,7 +21,7 @@ export async function generateMetadata({
 
   return {
     title: collection.name,
-    description: `${collection.count} títulos de ${collection.name} no acervo do MBA USP/Esalq.`,
+    description: `${collection.count} títulos de ${collection.name} no acervo do MBA em Data Science.`,
   };
 }
 

@@ -28,7 +28,7 @@ export function isAiConfigured() {
 }
 
 const SYSTEM = [
-  "Você cataloga PDFs acadêmicos para a biblioteca do MBA USP/Esalq.",
+  "Você cataloga PDFs acadêmicos para a biblioteca do MBA em Data Science.",
   "Use apenas o trecho fornecido. Não invente dados bibliográficos: campo sem evidência = null.",
   "title: só o nome principal da obra. Nada de slogan, subtítulo, edição, autor ou nome de arquivo.",
   "subtitle: o complemento do título, se houver. Edição nunca entra aqui.",
@@ -36,6 +36,7 @@ const SYSTEM = [
   "authors: pessoas, ordem de leitura, sem instituição, sem 'et al', sem organizador.",
   "description: 2 frases suas resumindo o assunto a partir do trecho, até 320 caracteres. Este é o único campo que você redige.",
   "tags: 3 a 5 temas em minúsculas.",
+  "Se o autor for uma editora e não uma pessoa, deixe authors vazio e ponha o nome em publisher.",
   "Responda só o JSON.",
 ].join(" ");
 
@@ -60,7 +61,7 @@ const RESPONSE_SCHEMA = {
   properties: {
     title: { type: ["string", "null"] },
     subtitle: { type: ["string", "null"] },
-    authors: { type: "array", items: { type: "string" }, maxItems: 8 },
+    authors: { type: ["array", "null"], items: { type: "string" }, maxItems: 8 },
     year: { type: ["integer", "null"] },
     publisher: { type: ["string", "null"] },
     edition: { type: ["string", "null"] },
@@ -68,7 +69,7 @@ const RESPONSE_SCHEMA = {
     language: { type: ["string", "null"] },
     discipline: { type: ["string", "null"] },
     kind: { type: ["string", "null"], enum: [...KINDS, null] },
-    tags: { type: "array", items: { type: "string" }, maxItems: 6 },
+    tags: { type: ["array", "null"], items: { type: "string" }, maxItems: 6 },
     description: { type: ["string", "null"] },
   },
 } as const;

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Coleções",
-  description: "As áreas do MBA USP/Esalq, organizadas em coleções navegáveis.",
+  description: "As áreas do MBA em Data Science, organizadas em coleções navegáveis.",
 };
 
 export default async function CollectionsPage() {

@@ -5,7 +5,7 @@ import { SITE, policyDate } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Termos de uso",
-  description: "As regras de uso do Silo, o acervo digital dos alunos do MBA USP/Esalq.",
+  description: "As regras de uso do Silo, o acervo digital dos alunos do MBA em Data Science.",
 };
 
 const SECTIONS: DocSection[] = [
@@ -16,13 +16,13 @@ const SECTIONS: DocSection[] = [
       <>
         <p>
           O Silo é um acervo digital mantido de forma voluntária por alunos e
-          ex-alunos do MBA USP/Esalq. Reúne livros, apostilas, artigos, slides e
+          ex-alunos do MBA em Data Science. Reúne livros, apostilas, artigos, slides e
           estudos de caso em PDF que já circulam entre turmas, num endereço fixo
           e pesquisável.
         </p>
         <p>
-          É uma iniciativa independente de estudantes. Não representa, não fala
-          em nome e não tem vínculo oficial com a USP, a Esalq ou a Fealq.
+          É uma iniciativa independente de estudantes. Não representa nenhuma
+          instituição de ensino nem fala em nome de qualquer uma delas.
         </p>
       </>
     ),

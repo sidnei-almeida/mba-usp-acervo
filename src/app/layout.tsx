@@ -21,15 +21,15 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: {
-    default: "Silo — Acervo MBA USP/Esalq",
+    default: "Silo — Acervo MBA Data Science",
     template: "%s — Silo",
   },
   description:
-    "Silo é a biblioteca digital dos alunos do MBA USP/Esalq: livros, apostilas, casos e artigos em PDF, reunidos em um só lugar.",
+    "Silo é a biblioteca digital dos alunos do MBA em Data Science: livros, apostilas, casos e artigos em PDF, reunidos em um só lugar.",
   openGraph: {
-    title: "Silo — Acervo MBA USP/Esalq",
+    title: "Silo — Acervo MBA Data Science",
     description:
-      "Biblioteca digital dos alunos do MBA USP/Esalq: livros, apostilas, casos e artigos em PDF.",
+      "Biblioteca digital dos alunos do MBA em Data Science: livros, apostilas, casos e artigos em PDF.",
     type: "website",
     locale: "pt_BR",
   },
