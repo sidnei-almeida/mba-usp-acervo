@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGrid, List, Search, X } from "lucide-react";
 import { BookCard } from "@/components/book-card";
@@ -8,6 +9,7 @@ import type { Book } from "@/lib/types";
 import { KINDS, KIND_LABEL } from "@/lib/types";
 import {
   buildIndex,
+  filtersFromParams,
   paramsFromFilters,
   runSearch,
   type Filters,
@@ -36,8 +38,11 @@ export function CatalogBrowser({
   autoFocus?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [view, setView] = useState(initialView);
+  // Whatever this component last pushed into the URL itself.
+  const ownWrite = useRef(paramsFromFilters(initialFilters, initialView).toString());
 
   // Everything runs against a prepared index, so typing never hits the server.
   const index = useMemo(() => buildIndex(books), [books]);
@@ -56,12 +61,28 @@ export function CatalogBrowser({
 
   // The URL follows the state without a navigation, so links stay shareable.
   useEffect(() => {
-    const params = paramsFromFilters(filters, view);
-    const next = params.size ? `/acervo?${params}` : "/acervo";
+    const params = paramsFromFilters(filters, view).toString();
+    const next = params ? `/acervo?${params}` : "/acervo";
+    ownWrite.current = params;
     if (next !== window.location.pathname + window.location.search) {
       window.history.replaceState(null, "", next);
     }
   }, [filters, view]);
+
+  /**
+   * A link back into /acervo with other params is a soft navigation: React
+   * keeps this component mounted, so the filters would stay on whatever the
+   * visitor had picked before and the link would look dead. Anything in the
+   * URL that this component did not write itself wins over local state.
+   */
+  const query = searchParams.toString();
+  useEffect(() => {
+    if (query === ownWrite.current) return;
+    ownWrite.current = query;
+    const params = new URLSearchParams(query);
+    setFilters(filtersFromParams(params));
+    setView(params.get("vista") === "indice" ? "indice" : "grade");
+  }, [query]);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();

@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowUpRight } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
-import { disciplinesOf, listBooks } from "@/lib/catalog";
+import { listBooks } from "@/lib/catalog";
+import { collectionsOf } from "@/lib/curation";
+import { withCoverUrls } from "@/lib/cover-url";
 import { KIND_LABEL, KINDS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +15,9 @@ export const metadata: Metadata = {
 };
 
 export default async function CollectionsPage() {
-  const books = await listBooks();
-  const disciplines = disciplinesOf(books);
+  const books = await withCoverUrls(await listBooks());
+  const collections = collectionsOf(books);
+  const pages = collections.reduce((total, item) => total + item.pages, 0);
 
   return (
     <div className="pt-[var(--header)]">
@@ -28,17 +31,20 @@ export default async function CollectionsPage() {
           <h1 className="display text-[clamp(1.75rem,4vw,3rem)]">
             O curso inteiro, em prateleiras.
           </h1>
-          <p className="label">{String(disciplines.length).padStart(2, "0")} áreas</p>
+          <p className="label">
+            {String(collections.length).padStart(2, "0")} áreas ·{" "}
+            {pages.toLocaleString("pt-BR")} páginas
+          </p>
         </div>
       </section>
 
       <section className="shell">
-        {disciplines.map((discipline, index) => {
-          const items = books.filter((book) => book.discipline === discipline.name);
+        {collections.map((collection, index) => {
+          const items = collection.books;
           return (
             <Link
-              key={discipline.name}
-              href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
+              key={collection.slug}
+              href={`/colecoes/${collection.slug}`}
               className="group grid gap-4 border-b border-line py-5 transition-colors hover:bg-ink-2 md:grid-cols-[auto_1fr_auto] md:items-center md:gap-8"
             >
               <span className="num">{String(index + 1).padStart(2, "0")}</span>
@@ -46,7 +52,7 @@ export default async function CollectionsPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="display text-[clamp(1.25rem,2.6vw,2rem)] leading-none">
-                    {discipline.name}
+                    {collection.name}
                   </h2>
                   <ArrowUpRight
                     className="h-3.5 w-3.5 text-dim transition-transform duration-400 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-bone"
@@ -54,8 +60,12 @@ export default async function CollectionsPage() {
                   />
                 </div>
                 <p className="label mt-2 truncate">
-                  {discipline.count} {discipline.count === 1 ? "título" : "títulos"} ·{" "}
-                  {items.slice(0, 3).map((book) => book.authors[0]).join(" · ")}
+                  {collection.count} {collection.count === 1 ? "título" : "títulos"} ·{" "}
+                  {collection.pages.toLocaleString("pt-BR")} páginas ·{" "}
+                  {collection.authors
+                    .slice(0, 3)
+                    .map((author) => author.name)
+                    .join(" · ")}
                 </p>
               </div>
 

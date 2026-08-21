@@ -4,12 +4,17 @@ import type { Metadata } from "next";
 import { ArrowLeft, BookOpen, Download } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
 import { BookRail } from "@/components/book-rail";
+import { ContributorNote } from "@/components/contributor-note";
 import { DeleteBook } from "@/components/delete-book";
+import { EditBook } from "@/components/edit-book";
 import { ShareButton } from "@/components/share-button";
 import { canManage, currentUser } from "@/lib/auth";
-import { getBookBySlug, listBooks, relatedBooks } from "@/lib/catalog";
+import { isHouseAccount, resolveAvatarUrl } from "@/lib/avatar-url";
+import { disciplinesOf, getBookBySlug, listBooks, relatedBooks } from "@/lib/catalog";
+import { resolveCoverUrl, withCoverUrls } from "@/lib/cover-url";
 import { KIND_LABEL } from "@/lib/types";
-import { formatBytes, formatDate } from "@/lib/utils";
+import { findUsersByIds } from "@/lib/users";
+import { formatBytes, formatDate, slugify } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -27,12 +32,23 @@ export async function generateMetadata({
 
 export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
   const { slug } = await params;
-  const book = await getBookBySlug(slug);
-  if (!book) notFound();
+  const found = await getBookBySlug(slug);
+  if (!found) notFound();
 
+  const book = { ...found, coverSrc: await resolveCoverUrl(found) };
   const books = await listBooks();
-  const related = relatedBooks(books, book);
+  const related = await withCoverUrls(relatedBooks(books, found));
   const manage = canManage(await currentUser(), book.uploadedById);
+
+  // Seeded records carry a name but no account; those wear the house glyph.
+  const uploader = book.uploadedById
+    ? (await findUsersByIds([book.uploadedById])).get(book.uploadedById)
+    : undefined;
+  const uploaderPortrait = {
+    house: isHouseAccount(uploader?.username ?? book.uploadedBy, uploader?.role),
+    url: uploader ? await resolveAvatarUrl(uploader.avatarKey) : undefined,
+  };
+  const disciplines = manage ? disciplinesOf(books).map((entry) => entry.name) : [];
 
   const details = [
     { label: "Formato", value: KIND_LABEL[book.kind] },
@@ -51,7 +67,6 @@ export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
             )}%`
           : formatBytes(book.fileSize),
     },
-    { label: "Enviado por", value: book.uploadedBy },
     { label: "No acervo desde", value: formatDate(book.createdAt) },
     { label: "Downloads", value: String(book.downloads) },
   ].filter((detail) => Boolean(detail.value));
@@ -94,7 +109,7 @@ export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
             </a>
             <ShareButton title={book.title} />
             {manage ? (
-              <div className="pt-2">
+              <div className="flex flex-col gap-2 pt-2">
                 <DeleteBook id={book.id} title={book.title} />
               </div>
             ) : null}
@@ -106,7 +121,13 @@ export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
             <span className="num">{book.year ?? "s.d."}</span>
             <span className="h-px w-6 bg-line" />
             <span className="label">
-              {KIND_LABEL[book.kind]} · {book.discipline}
+              {KIND_LABEL[book.kind]} ·{" "}
+              <Link
+                href={`/colecoes/${slugify(book.discipline)}`}
+                className="underline-grow hover:text-bone"
+              >
+                {book.discipline}
+              </Link>
             </span>
           </div>
 
@@ -145,12 +166,33 @@ export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
               </div>
             ))}
           </dl>
+
+          {manage ? (
+            <div className="mt-8">
+              <EditBook book={book} disciplines={disciplines} />
+            </div>
+          ) : null}
+
+          {book.uploadedBy ? (
+            <ContributorNote
+              name={book.uploadedBy}
+              accent={book.accent}
+              since={book.createdAt}
+              avatarUrl={uploaderPortrait.house ? undefined : uploaderPortrait.url}
+              house={uploaderPortrait.house}
+            />
+          ) : null}
         </div>
       </div>
 
       {related.length > 0 ? (
         <div className="border-t border-line">
-          <BookRail title="Na mesma prateleira" index="Rel." books={related} href="/acervo" />
+          <BookRail
+            title="Na mesma prateleira"
+            index="Rel."
+            books={related}
+            href={`/colecoes/${slugify(book.discipline)}`}
+          />
         </div>
       ) : null}
     </article>

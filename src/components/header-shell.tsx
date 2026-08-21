@@ -4,16 +4,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
+import { Avatar } from "@/components/avatar";
 import { BrandLockup } from "@/components/brand/brand-lockup";
 import { cx } from "@/lib/utils";
 
 const NAV = [
   { href: "/acervo", label: "Acervo" },
   { href: "/colecoes", label: "Coleções" },
+  { href: "/populares", label: "Mais baixados" },
   { href: "/sobre", label: "Sobre" },
 ];
 
-export function HeaderShell({ user }: { user: { name: string } | null }) {
+type SessionUser = { name: string; avatarUrl?: string; house?: boolean };
+
+export function HeaderShell({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
@@ -34,6 +38,7 @@ export function HeaderShell({ user }: { user: { name: string } | null }) {
 
   return (
     <header
+      id="site-header"
       className={cx(
         "fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300",
         scrolled || open ? "border-line bg-ink/90 backdrop-blur-md" : "border-transparent",
@@ -75,9 +80,19 @@ export function HeaderShell({ user }: { user: { name: string } | null }) {
               <Link href="/enviar" className="btn btn-ghost">
                 Enviar
               </Link>
-              <span className="text-[0.625rem] uppercase tracking-[0.16em] text-muted">
+              <Link
+                href="/conta"
+                className="group flex items-center gap-2 text-[0.625rem] uppercase tracking-[0.16em] text-muted transition-colors hover:text-bone"
+              >
+                <Avatar
+                  name={user.name}
+                  url={user.avatarUrl}
+                  house={user.house}
+                  size={24}
+                  className="transition-opacity group-hover:opacity-80"
+                />
                 {user.name}
-              </span>
+              </Link>
               <button
                 type="button"
                 onClick={signOut}
@@ -124,6 +139,19 @@ export function HeaderShell({ user }: { user: { name: string } | null }) {
             <div className="mt-2 flex flex-wrap gap-2 border-t border-line pt-4">
               {user ? (
                 <>
+                  <Link
+                    href="/conta"
+                    onClick={() => setOpen(false)}
+                    className="flex w-full items-center gap-2.5 border-b border-line pb-4 text-[0.75rem] uppercase tracking-[0.16em] text-bone"
+                  >
+                    <Avatar
+                      name={user.name}
+                      url={user.avatarUrl}
+                      house={user.house}
+                      size={28}
+                    />
+                    {user.name}
+                  </Link>
                   <Link href="/enviar" onClick={() => setOpen(false)} className="btn btn-solid">
                     Enviar material
                   </Link>

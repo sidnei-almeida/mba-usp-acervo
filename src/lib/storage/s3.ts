@@ -7,9 +7,21 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
-import type { ObjectPayload, StorageDriver, StoredObject } from "./index";
+import type {
+  ObjectPayload,
+  SignedUrlOptions,
+  StorageDriver,
+  StoredObject,
+} from "./index";
 
 const SIGNED_URL_TTL = 60 * 15;
+const STABLE_TTL = 60 * 60 * 24 * 2;
+
+/** Midnight UTC of the current day, so every render signs the same string. */
+function startOfDay() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
 
 function client() {
   return new S3Client({
@@ -100,7 +112,7 @@ export function createS3Driver(): StorageDriver {
       );
     },
 
-    async signedGetUrl(key, downloadName) {
+    async signedGetUrl(key, downloadName, options?: SignedUrlOptions) {
       return getSignedUrl(
         s3,
         new GetObjectCommand({
@@ -110,7 +122,12 @@ export function createS3Driver(): StorageDriver {
             ? `attachment; filename="${downloadName.replace(/"/g, "")}"`
             : undefined,
         }),
-        { expiresIn: SIGNED_URL_TTL },
+        options?.stable
+          ? {
+              expiresIn: options.expiresInSeconds ?? STABLE_TTL,
+              signingDate: startOfDay(),
+            }
+          : { expiresIn: options?.expiresInSeconds ?? SIGNED_URL_TTL },
       );
     },
   };

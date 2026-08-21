@@ -6,25 +6,41 @@ import { BookCover } from "@/components/book-cover";
 import { coverFallbackSrc, coverSrc } from "@/lib/cover-src";
 import type { Book } from "@/lib/types";
 import { KIND_LABEL } from "@/lib/types";
+import { cx } from "@/lib/utils";
 
 type Peek = { book: Book; x: number; y: number } | null;
 
 function Thumb({ book }: { book: Book }) {
   const [stage, setStage] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const src = stage === 0 ? coverSrc(book) : stage === 1 ? coverFallbackSrc(book) : null;
 
   if (src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt=""
-        aria-hidden
-        loading="lazy"
-        decoding="async"
-        onError={() => setStage((current) => current + 1)}
-        className="h-full w-full object-cover"
-      />
+      <>
+        {!loaded ? <span aria-hidden className="cover-skeleton" /> : null}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={src}
+          ref={(node) => {
+            if (node?.complete && node.naturalWidth > 0) setLoaded(true);
+          }}
+          src={src}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          onError={() => {
+            setLoaded(false);
+            setStage((current) => current + 1);
+          }}
+          className={cx(
+            "relative h-full w-full object-cover transition-opacity duration-500 ease-out",
+            loaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      </>
     );
   }
 
@@ -64,7 +80,7 @@ export function BookLedger({ books }: { books: Book[] }) {
             {String(index + 1).padStart(3, "0")}
           </span>
 
-          <span className="block h-[2.85rem] w-8 self-center overflow-hidden border border-line bg-ink-3">
+          <span className="relative block h-[2.85rem] w-8 self-center overflow-hidden border border-line bg-ink-3">
             <Thumb book={book} />
           </span>
 

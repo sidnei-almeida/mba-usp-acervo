@@ -17,7 +17,7 @@ export default async function SignUpPage() {
       index="02"
       eyebrow="Nova conta"
       title="Usuário e senha. Só isso."
-      lead="Sem e-mail, sem confirmação, sem burocracia. A primeira conta criada administra o acervo."
+      lead="Sem e-mail, sem confirmação, sem burocracia. A conta serve para enviar material e cuidar do que você mesmo enviou."
     >
       <Suspense fallback={<div className="h-64" />}>
         <AuthForm mode="criar" />

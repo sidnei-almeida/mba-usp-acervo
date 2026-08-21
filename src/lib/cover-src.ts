@@ -5,7 +5,10 @@ import type { Book } from "@/lib/types";
  * The remote URL is only a fallback for records ingested before the copy
  * existed, and it goes through the proxy.
  */
-export function coverSrc(book: Pick<Book, "coverUrl" | "coverKey">) {
+export function coverSrc(book: Pick<Book, "coverUrl" | "coverKey" | "coverSrc">) {
+  // Resolved on the server whenever the page had the chance.
+  if (book.coverSrc) return book.coverSrc;
+
   const cdn = process.env.NEXT_PUBLIC_BLOB_BASE_URL;
   // With a public store the browser can hit the CDN directly — no redirect,
   // no function invocation per thumbnail.

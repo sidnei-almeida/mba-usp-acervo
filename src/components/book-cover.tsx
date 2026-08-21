@@ -28,6 +28,7 @@ export function BookCover({
 }) {
   // 0 = stored copy, 1 = provider URL, 2 = give up and draw the cover.
   const [stage, setStage] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const src = stage === 0 ? coverSrc(book) : stage === 1 ? coverFallbackSrc(book) : null;
 
   return (
@@ -39,15 +40,39 @@ export function BookCover({
       style={{ containerType: "inline-size" }}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt={`Capa de ${book.title}`}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          onError={() => setStage((current) => current + 1)}
-          className="h-full w-full object-cover"
-        />
+        <>
+          {/* Held place, in the site's own material — never a grey block. */}
+          {!loaded ? (
+            <span aria-hidden className="cover-skeleton">
+              <SiloGlyph
+                className="breathe absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white/12"
+                style={{ width: "22cqw", height: "22cqw" }}
+              />
+            </span>
+          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={src}
+            ref={(node) => {
+              // A cached image can be complete before React attaches onLoad.
+              if (node?.complete && node.naturalWidth > 0) setLoaded(true);
+            }}
+            src={src}
+            alt={`Capa de ${book.title}`}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => {
+              setLoaded(false);
+              setStage((current) => current + 1);
+            }}
+            className={cx(
+              "relative h-full w-full object-cover transition-opacity duration-500 ease-out",
+              loaded ? "opacity-100" : "opacity-0",
+            )}
+          />
+        </>
       ) : (
         <div
           className="flex h-full w-full flex-col"

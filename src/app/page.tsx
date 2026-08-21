@@ -5,11 +5,14 @@ import { BookRail } from "@/components/book-rail";
 import { Hero } from "@/components/hero";
 import { Marquee } from "@/components/marquee";
 import { disciplinesOf, listBooks } from "@/lib/catalog";
+import { withCoverUrls } from "@/lib/cover-url";
+import { heroBook } from "@/lib/curation";
+import { slugify } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const books = await listBooks();
+  const books = await withCoverUrls(await listBooks());
 
   if (books.length === 0) {
     return (
@@ -33,7 +36,8 @@ export default async function HomePage() {
     );
   }
 
-  const featured = books.find((book) => book.featured) ?? books[0];
+  // The hero earns its slot instead of being pinned to one record.
+  const featured = heroBook(books) ?? books[0];
   const disciplines = disciplinesOf(books);
   const pages = books.reduce((total, book) => total + (book.pages ?? 0), 0);
 
@@ -93,14 +97,22 @@ export default async function HomePage() {
           title={discipline.name}
           index={String(index + 4).padStart(3, "0")}
           books={books.filter((book) => book.discipline === discipline.name)}
-          href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
+          href={`/colecoes/${slugify(discipline.name)}`}
         />
       ))}
 
       <section className="shell py-12">
-        <div className="mb-5 flex items-baseline gap-3 border-b border-line pb-2.5">
-          <span className="num">006</span>
-          <h2 className="text-[0.6875rem] uppercase tracking-[0.2em]">Coleções</h2>
+        <div className="mb-5 flex items-end justify-between gap-6 border-b border-line pb-2.5">
+          <div className="flex items-baseline gap-3">
+            <span className="num">006</span>
+            <h2 className="text-[0.6875rem] uppercase tracking-[0.2em]">Coleções</h2>
+          </div>
+          <Link
+            href="/colecoes"
+            className="underline-grow text-[0.625rem] uppercase tracking-[0.2em] text-muted hover:text-bone"
+          >
+            Todas as prateleiras
+          </Link>
         </div>
 
         {/* Borders per cell, not a filled gap grid: an incomplete last row
@@ -109,7 +121,7 @@ export default async function HomePage() {
           {disciplines.map((discipline, index) => (
             <Link
               key={discipline.name}
-              href={`/acervo?disciplina=${encodeURIComponent(discipline.name)}`}
+              href={`/colecoes/${slugify(discipline.name)}`}
               className="group flex min-h-[7rem] flex-col justify-between border-b border-r border-line p-4 transition-colors hover:bg-ink-2"
             >
               <div className="flex items-start justify-between gap-3">

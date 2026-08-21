@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from "@/lib/auth";
-import { createUser, findUserByUsername } from "@/lib/users";
+import { createUser, findUserByUsername, isReservedUsername } from "@/lib/users";
 
 export const runtime = "nodejs";
 
@@ -22,6 +22,10 @@ export async function POST(request: Request) {
       { error: parsed.error.issues[0]?.message ?? "Dados inválidos." },
       { status: 400 },
     );
+  }
+
+  if (isReservedUsername(parsed.data.username)) {
+    return NextResponse.json({ error: "Esse nome de usuário é reservado." }, { status: 409 });
   }
 
   if (await findUserByUsername(parsed.data.username)) {

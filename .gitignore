@@ -46,3 +46,14 @@ next-env.d.ts
 
 # worker copiado do pdfjs-dist
 /public/pdf.worker.min.mjs
+
+# acervos locais de PDF: fonte dos envios, nunca versionados
+/DS/
+/GESTAO/
+/LivrosDev/
+/Livros-UNOPAR-main/
+/Programming-Books-main/
+/Soft_Skills/
+/TI_e_Desenvolvimento/
+/Cursos de Programas/
+/pdf/
