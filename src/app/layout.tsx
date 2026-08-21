@@ -50,7 +50,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       {/* Warms the TLS handshake with the store before the first cover. */}
       {assets ? (
         <head>
-          <link rel="preconnect" href={assets} crossOrigin="anonymous" />
+          {/* Sem crossOrigin: as capas são <img> comuns e usariam outro pool
+              de conexões, desperdiçando o aquecimento. */}
+          <link rel="preconnect" href={assets} />
           <link rel="dns-prefetch" href={assets} />
         </head>
       ) : null}

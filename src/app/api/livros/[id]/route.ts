@@ -48,7 +48,8 @@ export async function DELETE(_request: Request, context: Context) {
   const book = await getBookById(id);
   if (!book) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
 
-  if (!canManage(await currentUser(), book.uploadedById)) {
+  const user = await currentUser();
+  if (!canManage(user, book.uploadedById)) {
     return NextResponse.json(
       { error: "Só quem enviou o material (ou um administrador) pode removê-lo." },
       { status: 403 },
@@ -64,7 +65,8 @@ export async function PATCH(request: Request, context: Context) {
   const book = await getBookById(id);
   if (!book) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
 
-  if (!canManage(await currentUser(), book.uploadedById)) {
+  const user = await currentUser();
+  if (!canManage(user, book.uploadedById)) {
     return NextResponse.json(
       { error: "Só quem enviou o material (ou a curadoria) pode editá-lo." },
       { status: 403 },
@@ -80,6 +82,14 @@ export async function PATCH(request: Request, context: Context) {
   }
 
   const input = parsed.data;
+  // A seat in the hero rotation is curation, not something an uploader grants
+  // themselves: rankForHero gives `featured` a boost.
+  if (input.featured !== undefined && user?.role !== "admin") {
+    return NextResponse.json(
+      { error: "Só a curadoria define destaque." },
+      { status: 403 },
+    );
+  }
   const known = disciplinesOf(await listBooks()).map((entry) => entry.name);
 
   // An edit passes through the same house style as a fresh submission. Empty
