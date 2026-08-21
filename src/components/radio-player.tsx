@@ -54,13 +54,14 @@ export function RadioPlayer() {
   const bruto = useSyncExternalStore(assinar, lerBruto, () => "");
   const preferencia = lerPreferencia(bruto);
   const { canal, volume, mudo } = preferencia;
-  const setCanal = (valor: string) => gravar({ ...preferencia, canal: valor });
-  const setVolume = (valor: number) => gravar({ ...preferencia, volume: valor });
-  const setMudo = (valor: boolean | ((atual: boolean) => boolean)) =>
-    gravar({
-      ...preferencia,
-      mudo: typeof valor === "function" ? valor(preferencia.mudo) : valor,
-    });
+
+  /**
+   * Uma gravação por gesto. Duas chamadas seguidas partiriam do mesmo objeto
+   * desta renderização, e a segunda desfaria a primeira — foi o que fazia o
+   * controle de volume voltar sozinho ao valor anterior.
+   */
+  const definir = (mudanca: Partial<typeof preferencia>) =>
+    gravar({ ...preferencia, ...mudanca });
   const [faixa, setFaixa] = useState<Track | null>(null);
   const [aviso, setAviso] = useState<Track | null>(null);
   const [fonte, setFonte] = useState<string | null>(null);
@@ -159,7 +160,7 @@ export function RadioPlayer() {
   const alternar = () => (tocando ? parar() : tocar(atual.stream));
 
   const trocarCanal = (id: string) => {
-    setCanal(id);
+    definir({ canal: id });
     setFaixa(null);
     ultimaFaixa.current = "";
     if (tocando) tocar(channelById(id).stream);
@@ -262,7 +263,7 @@ export function RadioPlayer() {
             <div className="flex items-center gap-3 border-t border-line px-3 py-2.5">
               <button
                 type="button"
-                onClick={() => setMudo((v) => !v)}
+                onClick={() => definir({ mudo: !mudo })}
                 aria-label={mudo ? "Ativar som" : "Silenciar"}
                 className="text-dim transition-colors hover:text-bone"
               >
@@ -278,10 +279,9 @@ export function RadioPlayer() {
                 max={1}
                 step={0.01}
                 value={mudo ? 0 : volume}
-                onChange={(event) => {
-                  setVolume(Number(event.target.value));
-                  setMudo(false);
-                }}
+                onChange={(event) =>
+                  definir({ volume: Number(event.target.value), mudo: false })
+                }
                 aria-label="Volume"
                 className="h-1 w-full cursor-pointer appearance-none bg-line accent-[color:var(--color-bone)]"
               />
