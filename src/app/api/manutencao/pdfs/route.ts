@@ -4,7 +4,16 @@ import { listBooks } from "@/lib/catalog";
 import { optimizeStoredPdf, type PipelineReport } from "@/lib/pdf-pipeline";
 
 export const runtime = "nodejs";
-export const maxDuration = 800;
+/**
+ * O teto do plano Hobby da Vercel é 300s; acima disso o build é recusado.
+ * Como o lote pode ser maior do que cabe nesse tempo, o laço para sozinho
+ * antes do limite e informa quantos sobraram, em vez de ser interrompido no
+ * meio sem devolver relatório.
+ */
+export const maxDuration = 300;
+
+/** Margem para serializar a resposta antes de a plataforma encerrar a função. */
+const ORCAMENTO_MS = (maxDuration - 25) * 1000;
 
 /** Runs the optimisation backlog. Administrators only; used by `npm run pdfs`. */
 export async function POST(request: Request) {
@@ -18,8 +27,14 @@ export async function POST(request: Request) {
 
   const pending = (await listBooks()).filter((book) => !book.optimizedAt).slice(0, limit);
   const report: PipelineReport[] = [];
+  const comecou = Date.now();
+  let restantes = 0;
 
-  for (const book of pending) {
+  for (const [indice, book] of pending.entries()) {
+    if (Date.now() - comecou > ORCAMENTO_MS) {
+      restantes = pending.length - indice;
+      break;
+    }
     report.push(await optimizeStoredPdf(book.id));
   }
 
@@ -33,6 +48,8 @@ export async function POST(request: Request) {
     analisados: report.length,
     otimizados: optimized.length,
     bytesEconomizados: savedBytes,
+    // Maior que zero significa que o tempo acabou: chame de novo para seguir.
+    restantes,
     report,
   });
 }
