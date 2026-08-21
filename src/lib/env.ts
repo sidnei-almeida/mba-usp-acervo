@@ -45,6 +45,8 @@ export const env = {
   sessionSecret: read("SESSION_SECRET") ?? "acervo-mba-usp-esalq-dev-secret",
   seedDemo: read("SEED_DEMO") !== "false",
   siteUrl: read("NEXT_PUBLIC_SITE_URL")?.replace(/\/$/, "") ?? "",
+  /** Domínio de produção da Vercel, quando NEXT_PUBLIC_SITE_URL não foi dado. */
+  vercelUrl: firstOf("VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_URL"),
   /**
    * The single account allowed to curate the shelf. The password has no
    * fallback on purpose: a default here would live in the repository history

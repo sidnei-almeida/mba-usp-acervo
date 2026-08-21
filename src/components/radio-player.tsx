@@ -212,7 +212,7 @@ export function RadioPlayer() {
               </button>
             </div>
 
-            <div className="flex items-start gap-3 px-3 py-3.5">
+            <div className="flex items-center gap-3 px-3 py-3">
               <button
                 type="button"
                 onClick={alternar}
@@ -259,7 +259,7 @@ export function RadioPlayer() {
             </div>
 
             {/* Volume */}
-            <div className="flex items-center gap-2.5 border-t border-line px-3 py-2.5">
+            <div className="flex items-center gap-3 border-t border-line px-3 py-2.5">
               <button
                 type="button"
                 onClick={() => setMudo((v) => !v)}
@@ -289,28 +289,50 @@ export function RadioPlayer() {
 
             {/* Canais */}
             <div className="border-t border-line">
-              <p className="label px-3 pb-1.5 pt-2.5">Canais</p>
+              <p className="label px-3 py-2.5">Canais</p>
               <div className="flex flex-col gap-px bg-line">
-                {CHANNELS.map((channel) => (
-                  <button
-                    key={channel.id}
-                    type="button"
-                    onClick={() => trocarCanal(channel.id)}
-                    aria-current={channel.id === canal}
-                    className={cx(
-                      "flex items-baseline gap-2 bg-ink-2 px-3 py-2 text-left transition-colors hover:bg-ink-3",
-                      channel.id === canal ? "text-bone" : "text-[#a6a8ab]",
-                    )}
-                  >
-                    <span className="text-[0.75rem]">{channel.name}</span>
-                    <span className="num truncate">{channel.blurb}</span>
-                    {channel.id === canal && tocando ? <Ondas className="ml-auto" /> : null}
-                  </button>
-                ))}
+                {CHANNELS.map((channel) => {
+                  const escolhido = channel.id === canal;
+                  return (
+                    <button
+                      key={channel.id}
+                      type="button"
+                      onClick={() => trocarCanal(channel.id)}
+                      aria-current={escolhido}
+                      className="flex items-center gap-3 bg-ink-2 px-3 py-2.5 text-left transition-colors hover:bg-ink-3"
+                    >
+                      {/* Traço à esquerda marca o canal escolhido sem mexer no
+                          alinhamento das linhas vizinhas. */}
+                      <span
+                        aria-hidden
+                        className={cx(
+                          "h-7 w-px shrink-0",
+                          escolhido ? "bg-bone" : "bg-transparent",
+                        )}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={cx(
+                            "block truncate text-[0.8125rem] leading-tight",
+                            escolhido ? "text-bone" : "text-[#a6a8ab]",
+                          )}
+                        >
+                          {channel.name}
+                        </span>
+                        <span className="mt-1 block truncate text-[0.625rem] uppercase tracking-[0.12em] text-dim">
+                          {channel.blurb}
+                        </span>
+                      </span>
+                      {escolhido && tocando ? (
+                        <Ondas className="shrink-0 text-bone" />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <p className="border-t border-line px-3 py-2 text-[0.5625rem] uppercase tracking-[0.16em] text-dim">
+            <p className="border-t border-line px-3 py-2.5 text-[0.5625rem] uppercase tracking-[0.16em] text-dim">
               Transmissão de{" "}
               <a
                 href="https://somafm.com"
