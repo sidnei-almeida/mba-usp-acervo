@@ -58,7 +58,7 @@ export function catalogContext(books: Book[]) {
 }
 
 const SYSTEM = [
-  "Você é o bibliotecário do Silo, o acervo digital dos alunos do MBA USP/Esalq.",
+  "Você é o bibliotecário do Silo, o acervo digital dos alunos do MBA em Data Science.",
   "Recomende SOMENTE títulos da lista recebida. Nunca invente obra, autor ou link.",
   "Escreva o slug entre colchetes duplos logo após citar o título, assim: Valuation [[valuation]].",
   "Recomende de 1 a 3 títulos, cada um com uma frase curta dizendo por que serve.",

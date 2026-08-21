@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGrid, List, Search, X } from "lucide-react";
 import { BookCard } from "@/components/book-card";
+import { SelectField } from "@/components/select-field";
 import { BookLedger } from "@/components/book-ledger";
 import type { Book } from "@/lib/types";
 import { KINDS, KIND_LABEL } from "@/lib/types";
@@ -143,18 +144,13 @@ export function CatalogBrowser({
           </div>
 
           <div className="flex items-center gap-2">
-            <select
+            <SelectField
+              label="Ordenar"
               value={filters.sort}
-              onChange={(event) => set("sort", event.target.value as SortKey)}
-              aria-label="Ordenar"
-              className="field h-9 w-auto text-[0.625rem] uppercase tracking-[0.14em]"
-            >
-              {SORTS.map((option) => (
-                <option key={option.value} value={option.value} className="bg-ink">
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              options={SORTS.map((option) => ({ value: option.value, label: option.label }))}
+              onChange={(value) => set("sort", value as SortKey)}
+              className="w-[9.5rem]"
+            />
 
             <div className="flex border border-line">
               {(

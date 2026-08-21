@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { upload as blobUpload } from "@vercel/blob/client";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { FileText, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
+import { SelectField } from "@/components/select-field";
 import { UploadGuide } from "@/components/upload/upload-guide";
 import type { CoverCandidate } from "@/lib/covers";
 import { readPdfPreview } from "@/lib/pdf-client";
@@ -60,12 +61,18 @@ function writeAiPref(value: boolean) {
 }
 
 function titleFromFileName(name: string) {
-  return name
-    .replace(/\.pdf$/i, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return (
+    name
+      .replace(/\.pdf$/i, "")
+      // Créditos no nome do arquivo não fazem parte do título.
+      .replace(/\s*-\s*Auto(?:r|hor)?\s*\(.*$/i, "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      // \w é ASCII: com ele "métodos" virava "MéTodos", porque o acento criava
+      // uma fronteira de palavra. Só a primeira letra de cada palavra sobe.
+      .replace(/(^|\s)(\p{L})/gu, (_, space, letter) => space + letter.toUpperCase())
+  );
 }
 
 type UploadSlot = {
@@ -609,16 +616,20 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               aria-label="Ajuda da IA"
               onClick={() => toggleAi(!aiOn)}
               className={cx(
-                "relative h-5 w-9 shrink-0 rounded-full border transition-colors",
-                aiOn ? "border-azul-luz bg-azul-luz/30" : "border-line bg-white/5",
+                "relative h-6 w-11 shrink-0 rounded-[2px] border transition-colors duration-200",
+                aiOn ? "border-bone bg-bone" : "border-line bg-transparent hover:border-white/45",
               )}
             >
+              {/* Bloco que corre no trilho, não pílula: mesma geometria dos
+                  chips e botões do resto do site. */}
               <span
+                aria-hidden
                 className={cx(
-                  "absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full transition-all duration-200",
-                  aiOn ? "left-[1.25rem] bg-azul-luz" : "left-[0.15rem] bg-dim",
+                  "absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-[1px] transition-all duration-200",
+                  aiOn ? "left-[1.5rem] bg-[#0a0b0c]" : "left-[0.2rem] bg-dim",
                 )}
               />
+              <span className="sr-only">{aiOn ? "Ligada" : "Desligada"}</span>
             </button>
           </div>
 
@@ -696,20 +707,16 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
             </datalist>
           </label>
 
-          <label>
+          <div>
             {fieldLabel("kind", "Formato")}
-            <select
+            <SelectField
+              label="Formato"
               value={form.kind}
-              onChange={(event) => set("kind", event.target.value)}
-              className="field mt-1.5"
-            >
-              {KINDS.map((kind) => (
-                <option key={kind} value={kind} className="bg-ink">
-                  {KIND_LABEL[kind]}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={KINDS.map((kind) => ({ value: kind, label: KIND_LABEL[kind] }))}
+              onChange={(value) => set("kind", value)}
+              className="mt-1.5"
+            />
+          </div>
 
           <label>
             {fieldLabel("publisher", "Editora")}

@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Mais baixados",
   description:
-    "O ranking do acervo do MBA USP/Esalq: os títulos que a turma mais levou para o disco.",
+    "O ranking do acervo do MBA em Data Science: os títulos que a turma mais levou para o disco.",
 };
 
 function first(value: string | string[] | undefined) {

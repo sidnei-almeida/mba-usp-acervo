@@ -17,7 +17,7 @@ export default async function HomePage() {
   if (books.length === 0) {
     return (
       <div className="shell flex min-h-[70svh] flex-col justify-center py-24">
-        <span className="label">Silo · Acervo MBA USP/Esalq</span>
+        <span className="label">Silo · Acervo MBA Data Science</span>
         <h1 className="display mt-4 max-w-2xl text-[clamp(2rem,5vw,3.5rem)]">
           A estante ainda está vazia.
         </h1>

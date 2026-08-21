@@ -113,7 +113,7 @@ const SEEDS: Seed[] = [
     kind: "livro",
     tags: ["agronegócio", "cadeias produtivas", "contratos"],
     description:
-      "Texto seminal sobre coordenação de cadeias agroalimentares, escrito por professores da própria Esalq e da FEA.",
+      "Texto seminal sobre coordenação de cadeias agroalimentares, referência nas disciplinas de agronegócio.",
     pages: 428,
     downloads: 298,
   },

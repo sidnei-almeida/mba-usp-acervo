@@ -59,7 +59,7 @@ export function BrandLockup({
             <span
               className={cx("uppercase leading-none opacity-55", DESCRIPTOR[size])}
             >
-              Acervo MBA USP/Esalq
+              Acervo MBA Data Science
             </span>
           </>
         ) : null}
@@ -87,7 +87,7 @@ export function BrandLockup({
             DESCRIPTOR[size],
           )}
         >
-          Acervo MBA USP/Esalq
+          Acervo MBA Data Science
         </span>
       ) : null}
     </span>
@@ -106,7 +106,7 @@ export function BrandStack({ className }: { className?: string }) {
         Silo
       </span>
       <span className="mt-3 border-t border-current/25 pt-2 text-[0.5625rem] uppercase tracking-[0.24em] opacity-60">
-        Acervo MBA USP/Esalq
+        Acervo MBA Data Science
       </span>
     </span>
   );

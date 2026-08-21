@@ -50,7 +50,7 @@ export function buildPlaceholderPdf(options: {
   }
   lines.push("ET");
   lines.push("BT /F1 9 Tf 64 90 Td");
-  lines.push("(Acervo MBA USP/Esalq - exemplar de demonstracao) Tj");
+  lines.push("(Acervo MBA Data Science - exemplar de demonstracao) Tj");
   lines.push("ET");
 
   const content = lines.join("\n");

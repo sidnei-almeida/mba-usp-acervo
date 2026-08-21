@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   try {
     const response = await fetch(parsed, {
       signal: controller.signal,
-      headers: { "User-Agent": "Silo/1.0 (acervo MBA USP/Esalq)" },
+      headers: { "User-Agent": "Silo/1.0 (acervo MBA Data Science)" },
       next: { revalidate: 604800 },
     });
 
