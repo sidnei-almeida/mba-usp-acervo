@@ -12,24 +12,27 @@ import type { ObjectPayload, StorageDriver, StoredObject } from "./index";
 const SIGNED_URL_TTL = 60 * 15;
 
 function client() {
-  const endpoint =
-    env.r2.endpoint ?? `https://${env.r2.accountId}.r2.cloudflarestorage.com`;
   return new S3Client({
-    region: "auto",
-    endpoint,
+    region: env.s3.region,
+    endpoint: env.s3.endpoint,
     credentials: {
-      accessKeyId: env.r2.accessKeyId!,
-      secretAccessKey: env.r2.secretAccessKey!,
+      accessKeyId: env.s3.accessKeyId!,
+      secretAccessKey: env.s3.secretAccessKey!,
     },
   });
 }
 
-export function createR2Driver(): StorageDriver {
+/**
+ * Works with any S3-compatible store — Cloudflare R2 and Backblaze B2 alike.
+ * With a private bucket every read is a presigned URL, which costs nothing
+ * extra on either provider.
+ */
+export function createS3Driver(): StorageDriver {
   const s3 = client();
-  const Bucket = env.r2.bucket!;
+  const Bucket = env.s3.bucket!;
 
   return {
-    name: "r2",
+    name: "s3",
 
     async put(key, body, contentType) {
       await s3.send(
