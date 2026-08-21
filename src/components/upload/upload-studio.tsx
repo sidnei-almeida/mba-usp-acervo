@@ -315,6 +315,12 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     setPdfText("");
     setAiNote(null);
     setAiFields(new Set());
+    // The metadata belonged to the file that just left: keeping it would
+    // smuggle the previous book's front matter onto the next PDF.
+    setForm(EMPTY);
+    setCandidates([]);
+    setChosenCover(null);
+    setError(null);
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -409,9 +415,14 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     }
   };
 
-  const ready = Boolean(
-    file && form.title.trim() && form.authors.trim() && form.discipline.trim(),
-  );
+  // Named out loud so a disabled button can say what it is waiting for.
+  const missing = [
+    !file ? "o PDF" : null,
+    !form.title.trim() ? "o título" : null,
+    !form.authors.trim() ? "os autores" : null,
+    !form.discipline.trim() ? "a área do curso" : null,
+  ].filter((item): item is string => item !== null);
+  const ready = missing.length === 0;
 
   // Rough tell for a badly exported scan: weight per page.
   const perPage = file && pages ? file.size / pages : 0;
@@ -811,10 +822,19 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               "Publicar no acervo"
             )}
           </button>
-          <p className="text-[0.6875rem] text-dim">
-            Ao publicar, você confirma ter direito de compartilhar este material.
-            O PDF é compactado logo depois do envio, sem perder o texto.
-          </p>
+          {ready ? (
+            <p className="text-[0.6875rem] text-dim">
+              Ao publicar, você confirma ter direito de compartilhar este material.
+              O PDF é compactado logo depois do envio, sem perder o texto.
+            </p>
+          ) : (
+            <p className="text-[0.6875rem] text-dim">
+              Falta {missing.length > 1
+                ? `${missing.slice(0, -1).join(", ")} e ${missing[missing.length - 1]}`
+                : missing[0]}
+              {" "}para publicar.
+            </p>
+          )}
         </div>
       </div>
     </form>
