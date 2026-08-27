@@ -3,6 +3,7 @@ import { Instrument_Serif, Inter_Tight } from "next/font/google";
 import { LibrarianChat } from "@/components/librarian-chat";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { siteOrigin } from "@/lib/site";
 import { assetOrigin } from "@/lib/storage";
 import "./globals.css";
 
@@ -20,16 +21,19 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  // Sem base absoluta, o Next emite caminhos relativos e o mensageiro
+  // descarta a imagem do cartão sem avisar.
+  metadataBase: new URL(siteOrigin()),
   title: {
-    default: "Silo — Acervo MBA USP/Esalq",
+    default: "Silo — Acervo MBA Data Science",
     template: "%s — Silo",
   },
   description:
-    "Silo é a biblioteca digital dos alunos do MBA USP/Esalq: livros, apostilas, casos e artigos em PDF, reunidos em um só lugar.",
+    "Silo é a biblioteca digital dos alunos do MBA em Data Science: livros, apostilas, casos e artigos em PDF, reunidos em um só lugar.",
   openGraph: {
-    title: "Silo — Acervo MBA USP/Esalq",
+    title: "Silo — Acervo MBA Data Science",
     description:
-      "Biblioteca digital dos alunos do MBA USP/Esalq: livros, apostilas, casos e artigos em PDF.",
+      "Biblioteca digital dos alunos do MBA em Data Science: livros, apostilas, casos e artigos em PDF.",
     type: "website",
     locale: "pt_BR",
   },
@@ -50,7 +54,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       {/* Warms the TLS handshake with the store before the first cover. */}
       {assets ? (
         <head>
-          <link rel="preconnect" href={assets} crossOrigin="anonymous" />
+          {/* Sem crossOrigin: as capas são <img> comuns e usariam outro pool
+              de conexões, desperdiçando o aquecimento. */}
+          <link rel="preconnect" href={assets} />
           <link rel="dns-prefetch" href={assets} />
         </head>
       ) : null}

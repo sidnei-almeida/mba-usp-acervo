@@ -14,7 +14,16 @@ export const CHAT = {
   maxCompletionTokens: 600,
   /** Turns of history kept; older context is not worth the tokens. */
   historyTurns: 6,
+  /** What a visitor may type. Matches the input's maxLength. */
   messageLimit: 600,
+  /**
+   * What an answer may be worth on the way back in. The model is allowed 600
+   * completion tokens, so its own turns are far longer than a question — capping
+   * both at the same number rejected every second question.
+   */
+  replyLimit: 4000,
+  /** How much of a past answer is resent as context. */
+  historyReplyLimit: 1200,
   /**
    * Above this many titles the whole catalogue stops being cheap to inline and
    * the context should switch to a search pass instead.
@@ -49,7 +58,7 @@ export function catalogContext(books: Book[]) {
 }
 
 const SYSTEM = [
-  "Você é o bibliotecário do Silo, o acervo digital dos alunos do MBA USP/Esalq.",
+  "Você é o bibliotecário do Silo, o acervo digital dos alunos do MBA em Data Science.",
   "Recomende SOMENTE títulos da lista recebida. Nunca invente obra, autor ou link.",
   "Escreva o slug entre colchetes duplos logo após citar o título, assim: Valuation [[valuation]].",
   "Recomende de 1 a 3 títulos, cada um com uma frase curta dizendo por que serve.",
@@ -78,7 +87,10 @@ export async function streamRecommendation({
 
   const history = messages.slice(-CHAT.historyTurns).map((message) => ({
     role: message.role,
-    content: message.content.slice(0, CHAT.messageLimit),
+    content: message.content.slice(
+      0,
+      message.role === "assistant" ? CHAT.historyReplyLimit : CHAT.messageLimit,
+    ),
   }));
 
   const response = await fetch(ENDPOINT, {
@@ -122,6 +134,25 @@ function toTextStream(source: ReadableStream<Uint8Array>): ReadableStream<Uint8A
   const encoder = new TextEncoder();
   let buffer = "";
 
+  /** Reads whatever complete "data:" frames the buffer holds. */
+  function drain(text: string, controller: TransformStreamDefaultController<Uint8Array>) {
+    for (const line of text.split("\n")) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+
+      try {
+        const parsed = JSON.parse(payload) as {
+          choices?: { delta?: { content?: string } }[];
+        };
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) controller.enqueue(encoder.encode(content));
+      } catch {
+        // A malformed frame is skipped rather than killing the answer.
+      }
+    }
+  }
+
   return source.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -129,22 +160,13 @@ function toTextStream(source: ReadableStream<Uint8Array>): ReadableStream<Uint8A
         const lines = buffer.split("\n");
         // The last piece may be a half-received line; it waits for more bytes.
         buffer = lines.pop() ?? "";
+        drain(lines.join("\n"), controller);
+      },
 
-        for (const line of lines) {
-          if (!line.startsWith("data:")) continue;
-          const payload = line.slice(5).trim();
-          if (!payload || payload === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(payload) as {
-              choices?: { delta?: { content?: string } }[];
-            };
-            const text = parsed.choices?.[0]?.delta?.content;
-            if (text) controller.enqueue(encoder.encode(text));
-          } catch {
-            // A malformed frame is skipped rather than killing the answer.
-          }
-        }
+      // A final frame without its trailing newline would otherwise be dropped.
+      flush(controller) {
+        buffer += decoder.decode();
+        if (buffer) drain(buffer, controller);
       },
     }),
   );

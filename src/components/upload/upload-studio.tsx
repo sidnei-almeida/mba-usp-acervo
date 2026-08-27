@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { upload as blobUpload } from "@vercel/blob/client";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { FileText, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
+import { SelectField } from "@/components/select-field";
 import { UploadGuide } from "@/components/upload/upload-guide";
 import type { CoverCandidate } from "@/lib/covers";
 import { readPdfPreview } from "@/lib/pdf-client";
@@ -60,12 +61,18 @@ function writeAiPref(value: boolean) {
 }
 
 function titleFromFileName(name: string) {
-  return name
-    .replace(/\.pdf$/i, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return (
+    name
+      .replace(/\.pdf$/i, "")
+      // Créditos no nome do arquivo não fazem parte do título.
+      .replace(/\s*-\s*Auto(?:r|hor)?\s*\(.*$/i, "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      // \w é ASCII: com ele "métodos" virava "MéTodos", porque o acento criava
+      // uma fronteira de palavra. Só a primeira letra de cada palavra sobe.
+      .replace(/(^|\s)(\p{L})/gu, (_, space, letter) => space + letter.toUpperCase())
+  );
 }
 
 type UploadSlot = {
@@ -308,6 +315,12 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     setPdfText("");
     setAiNote(null);
     setAiFields(new Set());
+    // The metadata belonged to the file that just left: keeping it would
+    // smuggle the previous book's front matter onto the next PDF.
+    setForm(EMPTY);
+    setCandidates([]);
+    setChosenCover(null);
+    setError(null);
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -402,9 +415,14 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
     }
   };
 
-  const ready = Boolean(
-    file && form.title.trim() && form.authors.trim() && form.discipline.trim(),
-  );
+  // Named out loud so a disabled button can say what it is waiting for.
+  const missing = [
+    !file ? "o PDF" : null,
+    !form.title.trim() ? "o título" : null,
+    !form.authors.trim() ? "os autores" : null,
+    !form.discipline.trim() ? "a área do curso" : null,
+  ].filter((item): item is string => item !== null);
+  const ready = missing.length === 0;
 
   // Rough tell for a badly exported scan: weight per page.
   const perPage = file && pages ? file.size / pages : 0;
@@ -609,16 +627,20 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               aria-label="Ajuda da IA"
               onClick={() => toggleAi(!aiOn)}
               className={cx(
-                "relative h-5 w-9 shrink-0 rounded-full border transition-colors",
-                aiOn ? "border-azul-luz bg-azul-luz/30" : "border-line bg-white/5",
+                "relative h-6 w-11 shrink-0 rounded-[2px] border transition-colors duration-200",
+                aiOn ? "border-bone bg-bone" : "border-line bg-transparent hover:border-white/45",
               )}
             >
+              {/* Bloco que corre no trilho, não pílula: mesma geometria dos
+                  chips e botões do resto do site. */}
               <span
+                aria-hidden
                 className={cx(
-                  "absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full transition-all duration-200",
-                  aiOn ? "left-[1.25rem] bg-azul-luz" : "left-[0.15rem] bg-dim",
+                  "absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-[1px] transition-all duration-200",
+                  aiOn ? "left-[1.5rem] bg-[#0a0b0c]" : "left-[0.2rem] bg-dim",
                 )}
               />
+              <span className="sr-only">{aiOn ? "Ligada" : "Desligada"}</span>
             </button>
           </div>
 
@@ -696,20 +718,16 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
             </datalist>
           </label>
 
-          <label>
+          <div>
             {fieldLabel("kind", "Formato")}
-            <select
+            <SelectField
+              label="Formato"
               value={form.kind}
-              onChange={(event) => set("kind", event.target.value)}
-              className="field mt-1.5"
-            >
-              {KINDS.map((kind) => (
-                <option key={kind} value={kind} className="bg-ink">
-                  {KIND_LABEL[kind]}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={KINDS.map((kind) => ({ value: kind, label: KIND_LABEL[kind] }))}
+              onChange={(value) => set("kind", value)}
+              className="mt-1.5"
+            />
+          </div>
 
           <label>
             {fieldLabel("publisher", "Editora")}
@@ -804,10 +822,19 @@ export function UploadStudio({ disciplines }: { disciplines: string[] }) {
               "Publicar no acervo"
             )}
           </button>
-          <p className="text-[0.6875rem] text-dim">
-            Ao publicar, você confirma ter direito de compartilhar este material.
-            O PDF é compactado logo depois do envio, sem perder o texto.
-          </p>
+          {ready ? (
+            <p className="text-[0.6875rem] text-dim">
+              Ao publicar, você confirma ter direito de compartilhar este material.
+              O PDF é compactado logo depois do envio, sem perder o texto.
+            </p>
+          ) : (
+            <p className="text-[0.6875rem] text-dim">
+              Falta {missing.length > 1
+                ? `${missing.slice(0, -1).join(", ")} e ${missing[missing.length - 1]}`
+                : missing[0]}
+              {" "}para publicar.
+            </p>
+          )}
         </div>
       </div>
     </form>

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, Loader2, Pencil } from "lucide-react";
+import { SelectField } from "@/components/select-field";
 import type { Book } from "@/lib/types";
 import { KINDS, KIND_LABEL, type Kind } from "@/lib/types";
 
@@ -177,20 +178,16 @@ export function EditBook({ book, disciplines }: { book: Book; disciplines: strin
           </datalist>
         </label>
 
-        <label>
+        <div>
           <span className="label">Formato</span>
-          <select
+          <SelectField
+            label="Formato"
             value={draft.kind}
-            onChange={(event) => set("kind", event.target.value)}
-            className="field mt-1.5"
-          >
-            {KINDS.map((kind) => (
-              <option key={kind} value={kind} className="bg-ink">
-                {KIND_LABEL[kind]}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={KINDS.map((kind) => ({ value: kind, label: KIND_LABEL[kind] }))}
+            onChange={(value) => set("kind", value)}
+            className="mt-1.5"
+          />
+        </div>
 
         <label>
           <span className="label">Editora</span>

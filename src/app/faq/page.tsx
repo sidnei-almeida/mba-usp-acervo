@@ -5,7 +5,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Perguntas frequentes",
-  description: "Como usar, enviar e remover material no Silo, o acervo do MBA USP/Esalq.",
+  description: "Como usar, enviar e remover material no Silo, o acervo do MBA em Data Science.",
 };
 
 type Entry = { q: string; a: React.ReactNode };
@@ -205,12 +205,12 @@ const GROUPS: Group[] = [
         ),
       },
       {
-        q: "O Silo tem relação oficial com a USP ou a Esalq?",
+        q: "O Silo é ligado a alguma instituição de ensino?",
         a: (
           <p>
             Não. É uma iniciativa independente de estudantes, sem vínculo,
-            patrocínio ou representação institucional da USP, da Esalq ou da
-            Fealq.
+            patrocínio ou representação institucional de qualquer universidade
+            ou escola.
           </p>
         ),
       },

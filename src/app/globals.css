@@ -410,10 +410,116 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
 }
 
-/* Dragged files and text keep the palette instead of the system highlight. */
+/* Selection needs one rule per engine: an unknown pseudo-element would
+   invalidate the whole selector list if they shared it. */
 ::-moz-selection {
   background: var(--color-azul-luz);
   color: #fff;
+}
+
+::selection {
+  background: var(--color-azul-luz);
+  color: #fff;
+}
+
+/* Barras da rádio: sobem e descem enquanto há som no ar. */
+@keyframes onda {
+  0%,
+  100% {
+    height: 25%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+.onda {
+  height: 25%;
+  animation: onda 900ms ease-in-out infinite;
+}
+
+/* O controle de volume nativo é cinza do sistema; aqui vira filete e bloco. */
+input[type="range"] {
+  appearance: none;
+  background: var(--color-line);
+  height: 2px;
+  border-radius: 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--color-bone);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--color-bone);
+  cursor: pointer;
+}
+
+/* Camada de texto do leitor: transparente sobre o canvas, mas selecionável —
+   é o que permite copiar uma citação e destacar a busca sem redesenhar a página.
+   As regras abaixo são o contrato do TextLayer do pdf.js 6: cada trecho chega
+   com --font-height, --scale-x e --rotate no style inline e conta com estas
+   declarações para virar tamanho e transformação. Sem elas o texto herda o
+   tamanho do corpo da página e escorrega para fora do que está desenhado. */
+.pdf-text-layer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 2;
+
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.pdf-text-layer span,
+.pdf-text-layer br {
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  color: transparent;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.pdf-text-layer > :not(.markedContent),
+.pdf-text-layer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+/* Agrupador de conteúdo marcado: não ocupa lugar, só embrulha os trechos. */
+.pdf-text-layer .markedContent {
+  display: contents;
+}
+
+.pdf-text-layer ::selection {
+  background: rgba(63, 123, 234, 0.4);
+}
+
+.pdf-marca {
+  background: rgba(201, 162, 39, 0.45);
+  color: transparent;
+  border-radius: 1px;
 }
 
 /* A cover still arriving: the grain of the shelf, a glyph holding the place and
@@ -515,7 +621,8 @@ input[type="number"]::-webkit-outer-spin-button {
   }
   .breathe,
   .think-dot,
-  .caret {
+  .caret,
+  .onda {
     animation: none;
   }
   .cover-skeleton::after {

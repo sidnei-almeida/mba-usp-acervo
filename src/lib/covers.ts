@@ -31,7 +31,7 @@ async function getJson<T>(url: string): Promise<T | null> {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Silo/1.0 (acervo MBA USP/Esalq)" },
+      headers: { "User-Agent": "Silo/1.0 (acervo MBA Data Science)" },
       next: { revalidate: 86400 },
     });
     if (!response.ok) return null;
@@ -236,7 +236,7 @@ export async function verifyCover(url: string) {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Silo/1.0 (acervo MBA USP/Esalq)" },
+      headers: { "User-Agent": "Silo/1.0 (acervo MBA Data Science)" },
     });
     if ([403, 404, 410].includes(response.status)) return false;
     if (!response.ok) return true;

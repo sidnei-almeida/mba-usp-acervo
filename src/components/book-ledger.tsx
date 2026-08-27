@@ -6,7 +6,6 @@ import { BookCover } from "@/components/book-cover";
 import { coverFallbackSrc, coverSrc } from "@/lib/cover-src";
 import type { Book } from "@/lib/types";
 import { KIND_LABEL } from "@/lib/types";
-import { cx } from "@/lib/utils";
 
 type Peek = { book: Book; x: number; y: number } | null;
 
@@ -35,10 +34,7 @@ function Thumb({ book }: { book: Book }) {
             setLoaded(false);
             setStage((current) => current + 1);
           }}
-          className={cx(
-            "relative h-full w-full object-cover transition-opacity duration-500 ease-out",
-            loaded ? "opacity-100" : "opacity-0",
-          )}
+          className="relative h-full w-full object-cover"
         />
       </>
     );

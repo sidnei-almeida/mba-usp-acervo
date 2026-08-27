@@ -41,7 +41,12 @@ export function BookCover({
     >
       {src ? (
         <>
-          {/* Held place, in the site's own material — never a grey block. */}
+          {/*
+            The placeholder sits *behind* the image, which stays opaque. An
+            image that has not arrived paints nothing, so the skeleton shows
+            through on its own — and the cover is still visible when the server
+            HTML is all the browser has.
+          */}
           {!loaded ? (
             <span aria-hidden className="cover-skeleton">
               <SiloGlyph
@@ -67,10 +72,7 @@ export function BookCover({
               setLoaded(false);
               setStage((current) => current + 1);
             }}
-            className={cx(
-              "relative h-full w-full object-cover transition-opacity duration-500 ease-out",
-              loaded ? "opacity-100" : "opacity-0",
-            )}
+            className="relative h-full w-full object-cover"
           />
         </>
       ) : (

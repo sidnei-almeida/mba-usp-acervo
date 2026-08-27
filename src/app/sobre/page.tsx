@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sobre",
-  description: "Como funciona o Silo, o acervo digital do MBA USP/Esalq.",
+  description: "Como funciona o Silo, o acervo digital do MBA em Data Science.",
 };
 
 const STEPS = [
@@ -36,8 +36,8 @@ export default function AboutPage() {
         <p className="prose-sm mt-5 max-w-xl">
           Material de MBA circula por grupos de mensagem, e-mail e pen drive até
           desaparecer. O Silo existe para dar endereço fixo a esse conteúdo: um
-          lugar rápido e pesquisável, mantido pelos próprios alunos do MBA
-          USP/Esalq.
+          lugar rápido e pesquisável, mantido pelos próprios alunos do MBA em
+          Data Science.
         </p>
       </section>
 
@@ -67,8 +67,8 @@ export default function AboutPage() {
             indevidamente, o item é removido assim que avisado.
           </p>
           <p className="text-dim">
-            Iniciativa independente de estudantes, sem representar a USP, a Esalq
-            ou a Fealq.
+            Iniciativa independente de estudantes, sem vínculo com qualquer
+            instituição de ensino.
           </p>
         </div>
       </section>

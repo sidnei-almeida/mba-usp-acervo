@@ -22,7 +22,7 @@ export async function ingestCover(bookId: string, url: string): Promise<string |
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Silo/1.0 (acervo MBA USP/Esalq)" },
+      headers: { "User-Agent": "Silo/1.0 (acervo MBA Data Science)" },
     });
     if (!response.ok) return null;
 
