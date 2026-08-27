@@ -1,215 +1,173 @@
-# Silo — Acervo MBA USP/Esalq
+# Silo
 
-Biblioteca digital para alunos do MBA USP/Esalq compartilharem livros, apostilas,
-casos e artigos em PDF. Interface em preto absoluto, tipografia editorial e
-navegação por trilhos — referência declarada: MUBI.
+Acervo digital do MBA Data Science. Uma estante compartilhada — livros, apostilas, casos e artigos em PDF.
 
-Construído com **Next.js 16 (App Router) + TypeScript + Tailwind v4**, com
-**Cloudflare R2** para os arquivos e **Neon (Postgres)** para contas e catálogo.
+<p align="center">
+  <img src="images/silo.png" alt="Silo — home do acervo" width="920" />
+</p>
 
-## Como rodar
+---
+
+Silo é a biblioteca da turma: consulta aberta, envio autenticado, leitor próprio e uma identidade editorial em preto absoluto.
+
+O nome vem do que guarda a safra — e, aqui, do que a turma aprendeu.
+
+## O que há na estante
+
+- **Catálogo** com busca instantânea, trilhos por área e vista de índice
+- **Leitor** em tela cheia (pdf.js), com zoom, busca, atalhos e texto selecionável
+- **Envio** com dropzone, metadados sugeridos e compactação de PDF
+- **Capas** resolvidas pela Open Library e pelo Google Books, guardadas junto dos arquivos
+- **Contas** com usuário e senha — a primeira criada é administradora
+- **Rádio** da estante no cabeçalho, para acompanhar a leitura
+
+## Stack
+
+| Camada | Tecnologia |
+| --- | --- |
+| Aplicação | Next.js 16 (App Router), React 19, TypeScript, Tailwind v4 |
+| Catálogo e contas | Neon (Postgres) |
+| Arquivos | Vercel Blob, Backblaze B2 ou Cloudflare R2 — bucket privado |
+| Desenvolvimento | Sistema de arquivos em `.data/`, sem credenciais |
+
+Os drivers de armazenamento compartilham a mesma interface em `src/lib/storage/`. A escolha é automática: Blob, em seguida S3-compatível, por último o disco local.
+
+## Começar
 
 ```bash
 npm install
-cp .env.example .env.local   # opcional para desenvolvimento
+cp .env.example .env.local
 npm run dev
 ```
 
-Sem credenciais do R2 o projeto entra em **modo local**: PDFs, capas e catálogo
-são gravados em `.data/` e o acervo é populado com 12 títulos de demonstração
-(defina `SEED_DEMO=false` para desligar).
+Sem credenciais de armazenamento o projeto sobe em modo local, com um acervo de demonstração. Defina `SEED_DEMO=false` para desligar a semente.
+
+O restante das variáveis está documentado em [`.env.example`](.env.example).
 
 ## Armazenamento
 
-Os arquivos vivem atrás de uma única interface (`src/lib/storage/`), com três
-drivers escolhidos nesta ordem:
-
-1. **Vercel Blob** — quando existe `BLOB_READ_WRITE_TOKEN`. O envio vai do
-   navegador direto para a store pelo handshake de client upload, sem passar
-   pelo limite de 4,5 MB das funções. Defina também `NEXT_PUBLIC_BLOB_BASE_URL`
-   para as capas saírem do CDN sem invocar função.
-2. **Armazenamento S3-compatível** — Backblaze B2, Cloudflare R2, MinIO. Usa
-   URL assinada tanto para enviar quanto para baixar, então **o bucket pode (e
-   deve) ser privado**.
-3. **Sistema de arquivos** (`.data/`) — sem nenhuma credencial, para
-   desenvolvimento.
-
-### Limites do plano Hobby do Vercel Blob
-
-1 GB de armazenamento, 10 GB de transferência, 10 mil operações simples e 2 mil
-avançadas por mês. Estourar qualquer um deles bloqueia a store por 30 dias, então
-vale acompanhar em Observability e manter os PDFs compactados.
-
-## Backblaze B2
-
-Bucket **privado** — público não muda o preço e só abriria os PDFs para
-qualquer um. O plano gratuito dá 10 GB de armazenamento e egress grátis até 3×
-o armazenamento médio do mês.
-
-1. Crie o bucket e uma *application key* com acesso a ele.
-2. No `.env.local`:
+O envio sai do navegador por URL assinada (ou handshake de client upload, no Blob). O servidor não carrega o PDF.
 
 ```
-B2_KEY_ID=005...
-B2_APPLICATION_KEY=K005...
+livros/<id>/<arquivo>.pdf    original
+capas/<id>.jpg               capa persistida
+catalogo/                    metadados — só no modo sem banco
+```
+
+Com `DATABASE_URL`, o Neon guarda usuários e catálogo; o bucket fica só com os arquivos.
+
+### Vercel Blob
+
+Ativado por `BLOB_READ_WRITE_TOKEN`. Use `NEXT_PUBLIC_BLOB_BASE_URL` para as capas saírem direto do CDN.
+
+No plano Hobby: 1 GB de armazenamento, 10 GB de transferência, 10 mil operações simples e 2 mil avançadas por mês. Estourar qualquer teto bloqueia a store por 30 dias — acompanhe em Observability e envie PDFs já compactados.
+
+### Backblaze B2
+
+Bucket **privado**. O plano gratuito cobre 10 GB e egress até 3× o armazenamento médio do mês.
+
+```
+B2_KEY_ID=
+B2_APPLICATION_KEY=
 B2_BUCKET=silo-acervo
 B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
 ```
 
-A região sai do próprio endpoint (`us-east-005`, por exemplo). O envio do
-navegador vai direto ao bucket por URL assinada, o que exige liberar CORS:
+O CORS do painel libera só `GET` e `HEAD`. O envio precisa de `s3_put` e de `content-type`:
 
 ```bash
-npm run b2-cors                 # libera para qualquer origem
+npm run b2-cors
 npm run b2-cors -- --origem https://seu-dominio
-npm run b2-cors -- --ver        # mostra as regras atuais
+npm run b2-cors -- --ver
 ```
 
-Dois detalhes que custam tempo se pegarem de surpresa:
+A master application key não funciona na API S3. Use uma chave de aplicação com o bucket selecionado. Se o bucket já tiver regras nativas, o script fala com a API do B2 — a S3 recusa `PutBucketCors`.
 
-- O preset de CORS do painel do B2 libera só `GET` e `HEAD`. O envio precisa de
-  `s3_put` e do header `content-type`, que é o que o script acima grava.
-- Quando o bucket já tem regras nativas, a API S3 recusa `PutBucketCors` com
-  *"The bucket contains B2 Native CORS rules"*. Por isso o script fala com a API
-  nativa do B2, não com a S3.
-- A master application key **não funciona** na API S3: use uma chave de
-  aplicação criada à parte, com o bucket selecionado.
-
-## Cloudflare R2
-
-1. Crie um bucket no R2 (ex.: `acervo-mba-usp-esalq`).
-2. Gere um token de API com permissão de leitura e escrita no bucket.
-3. Preencha no `.env.local`:
+### Cloudflare R2
 
 ```
-R2_ACCOUNT_ID=...
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-R2_BUCKET=acervo-mba-usp-esalq
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
 ```
 
-Opcionalmente, `R2_PUBLIC_BASE_URL` aponta para um domínio público servindo o
-bucket. Com R2 configurado, o upload vai direto do navegador para o bucket via
-URL pré-assinada e o download é servido por redirect assinado — o servidor não
-carrega o arquivo.
+`R2_PUBLIC_BASE_URL` é opcional, para um domínio público na frente do bucket.
 
-### Como os dados ficam no bucket
+## Banco
 
-```
-livros/<id>/<arquivo>.pdf    arquivo original enviado
-capas/<id>.jpg               capa: da Open Library/Google Books ou a primeira
-                             página renderizada no navegador
-catalogo/<id>.json           metadados (apenas no modo sem banco)
-catalogo/_index.json         índice (apenas no modo sem banco)
+Crie um projeto em [neon.tech](https://neon.tech) e coloque a connection string em `DATABASE_URL`. Também valem `POSTGRES_URL`, `DATABASE_URL_UNPOOLED` e `POSTGRES_URL_NON_POOLING`.
+
+As tabelas `usuarios` e `livros` nascem no primeiro acesso.
+
+```bash
+npm run db                     # tabelas e contagens
+npm run db -- --limpar-demo    # remove títulos de demonstração
 ```
 
-Com `DATABASE_URL` configurada, os metadados vivem no Neon e o bucket guarda
-somente arquivos. `src/lib/catalog.ts` escolhe a implementação em tempo de
-execução (`catalog-db.ts` ou `catalog-json.ts`), ambas atrás da mesma interface.
+Sem Postgres, contas e catálogo caem em JSON no próprio armazenamento — útil para desenvolver, insuficiente para produção.
 
-## Neon (Postgres)
+Cadastro é usuário e senha, com `scrypt` e cookie assinado por `SESSION_SECRET`. Consultar o acervo não exige conta; publicar, sim. Remover um título cabe a quem o enviou ou a um administrador.
 
-Crie um projeto em [neon.tech](https://neon.tech), copie a connection string e
-coloque em `.env.local`:
+## Compactação
 
+PDFs mal exportados ocupam o bucket à toa. O caminho recomendado é compactar **antes** do envio:
+
+```bash
+npm run preparar livro.pdf     # gera livro-otimizado.pdf ao lado
 ```
-DATABASE_URL=postgresql://usuario:senha@ep-xxx.neon.tech/neondb?sslmode=require
+
+Ghostscript reamostra imagens (170 dpi, `PDF_TARGET_DPI`) e faz subset das fontes; qpdf recomprime sem perda; sem esses binários, resta uma regravação estrutural com `pdf-lib`. Fica o menor arquivo que ainda abre e preserva o número de páginas — ou o original, se o ganho for menor que 3%.
+
+A Vercel não traz Ghostscript nem qpdf. Para o que já está no armazenamento:
+
+```bash
+npm run otimizar
 ```
 
-Também são aceitos os nomes `POSTGRES_URL`, `DATABASE_URL_UNPOOLED` e
-`POSTGRES_URL_NON_POOLING`, que é como a Neon e a Vercel batizam a mesma string.
-As tabelas `usuarios` e `livros` são criadas sozinhas no primeiro acesso; use
-`npm run db` para conferir o estado (e `npm run db -- --limpar-demo` para tirar
-os títulos de demonstração). Sem
-`DATABASE_URL`, contas e catálogo caem no modo JSON descrito acima — bom para
-desenvolvimento, não para produção.
-
-## Contas
-
-Cadastro com usuário e senha, sem e-mail. A senha é derivada com `scrypt` e a
-sessão vive em cookie assinado por `SESSION_SECRET`. **A primeira conta criada
-vira administradora.** Consultar o acervo não exige conta; enviar material sim,
-e remover um título é permitido a quem o enviou ou a um administrador.
+Limite de envio: 200 MB por arquivo.
 
 ## Marca
 
-O kit de marca vive em `/marca`: letreiro, glifo, respiro, paleta, tipografia e
-usos. Os arquivos SVG ficam em `public/marca/`, e o glifo também é o favicon
-(`src/app/icon.svg`).
+O kit completo — glifo, letreiro, respiro, paleta e usos — está em `/marca`. Os SVG ficam em `public/marca/`; o glifo também é o favicon.
 
 ## Estrutura
 
 ```
 src/app/                  páginas e rotas de API
-  page.tsx                home com destaque e trilhos
-  acervo/                 grade completa com busca e filtros
+  acervo/                 grade, busca e índice
   colecoes/               áreas do curso
-  livro/[slug]/           ficha do título e leitor embutido
-  enviar/                 sala de envio (dropzone + formulário)
-  entrar/, criar-conta/   acesso e cadastro
-  marca/                  kit de marca
-  api/                    contas, sessão, upload, catálogo e entrega de arquivos
-src/components/           header, trilhos, capas geradas, formulário
+  livro/[slug]/           ficha e leitor
+  enviar/                 dropzone e formulário
+  entrar/, criar-conta/   autenticação
+  marca/                  kit de identidade
+src/components/
 src/lib/
-  storage/                driver R2 e driver local (mesma interface)
-  db/client.ts            conexão Neon e criação das tabelas
-  catalog*.ts             catálogo: dispatcher, implementação Neon e JSON
-  users.ts, auth.ts       contas, hash de senha e sessão
-  pdf-client.ts           leitura do PDF e captura da capa no navegador
+  storage/                Blob, S3 e disco — mesma interface
+  catalog*.ts             Neon ou JSON
+  db/                     conexão e tabelas
 ```
-
-## Detalhes de implementação
-
-- **Capas**: a busca consulta Open Library e Google Books (por ISBN ou
-  título+autor, em português e inglês) e guarda apenas a URL — nada de imagem no
-  R2. Sem resultado, entra a primeira página do PDF renderizada no navegador
-  (pdf.js) e, por último, uma capa tipográfica gerada com cor determinística.
-  A capa encontrada é **baixada uma vez e guardada no R2** junto dos PDFs
-  (`capas/<id>.jpg`), então a página nunca depende do provedor estar no ar.
-  Registros antigos ainda apontando só para a URL usam o proxy `/api/capa`, que
-  valida a origem e guarda em cache; se tudo falhar, entra a capa gerada.
-  O acesso anônimo ao Google Books tem cota diária baixa — defina
-  `GOOGLE_BOOKS_API_KEY` para melhorar a cobertura de edições brasileiras.
-- **Leitor**: `/livro/<slug>/ler` embute o PDF em tela cheia com cabeçalho
-  próprio.
-- **Índice**: além da grade de capas, o acervo tem uma vista de índice
-  (`/acervo?vista=indice`) — linhas numeradas com a capa aparecendo ao lado do
-  cursor.
-- **Limite**: 200 MB por arquivo.
-- **Compacte antes de enviar**: `npm run preparar livro.pdf` gera
-  `livro-otimizado.pdf` ao lado do original, conferindo que a contagem de
-  páginas não mudou. É o caminho recomendado — o arquivo já sobe leve e não
-  gasta transferência à toa. A sala de envio avisa quando o PDF escolhido está
-  pesado demais para o número de páginas.
-- **Compactação na Vercel**: a plataforma não traz Ghostscript nem qpdf, então
-  a pipeline do servidor é pulada por lá em vez de baixar e reenviar o arquivo
-  por um ganho estrutural de poucos por cento. Para o que já está no
-  armazenamento sem otimizar, use `npm run otimizar`.
-- **Compactação**: depois de publicado, o PDF passa por uma pipeline em camadas
-  — Ghostscript (reamostra imagens para 170 dpi e faz subset das fontes), qpdf
-  (recompressão sem perda) e, se nenhum binário existir na máquina, uma
-  regravação estrutural com `pdf-lib`. Vence o menor resultado que ainda abre e
-  mantém a contagem de páginas; se ninguém melhorar pelo menos 3%, o original
-  fica. Em PDF de digitalização a redução costuma passar de 70%.
 
 ## Scripts
 
-| Comando | O que faz |
+| Comando | Função |
 | --- | --- |
-| `npm run dev` | ambiente de desenvolvimento |
+| `npm run dev` | desenvolvimento |
 | `npm run build` | build de produção |
-| `npm run start` | sobe o build |
+| `npm run start` | serve o build |
 | `npm run lint` | ESLint |
-| `npm run db` | mostra tabelas e contagens do Postgres |
-| `npm run capas -- --usuario X --senha Y` | baixa e guarda capas que faltam |
-| `npm run pdfs -- --usuario X --senha Y` | compacta os PDFs pelo servidor |
-| `npm run preparar arquivo.pdf` | compacta um PDF **antes** de enviá-lo |
-| `npm run b2-cors -- --bucket X` | gera as regras de CORS do Backblaze B2 |
+| `npm run db` | inspeção do Postgres |
+| `npm run capas -- --usuario X --senha Y` | baixa capas que faltam |
+| `npm run pdfs -- --usuario X --senha Y` | compacta PDFs pelo servidor |
+| `npm run preparar arquivo.pdf` | compacta um PDF antes do envio |
 | `npm run otimizar` | compacta o que já está no armazenamento |
+| `npm run b2-cors` | regras de CORS do Backblaze B2 |
 
 O `postinstall` copia o worker do pdf.js para `public/`.
 
-## Aviso
+---
 
-Iniciativa independente de alunos, sem vínculo oficial com a USP, a Esalq ou a
-Fealq. Envie apenas material que você tem direito de compartilhar.
+<p align="center">
+  Iniciativa independente de alunos, sem vínculo oficial com a USP, a Esalq ou a Fealq.<br />
+  Envie apenas material que você tem direito de compartilhar.
+</p>
