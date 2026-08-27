@@ -1,4 +1,4 @@
-# Silo — Acervo MBA USP/Esalq
+# Silo: Acervo MBA USP/Esalq
 
 Biblioteca digital para alunos do MBA USP/Esalq compartilharem livros, apostilas,
 casos e artigos em PDF. Interface em preto absoluto, tipografia editorial e
