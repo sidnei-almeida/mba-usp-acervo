@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, BookOpen, Download } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
 import { BookRail } from "@/components/book-rail";
 import { ContributorNote } from "@/components/contributor-note";
 import { DeleteBook } from "@/components/delete-book";
+import { DownloadButton } from "@/components/download-button";
 import { EditBook } from "@/components/edit-book";
 import { ShareButton } from "@/components/share-button";
 import { canManage, currentUser } from "@/lib/auth";
@@ -124,10 +125,10 @@ export default async function BookPage({ params }: PageProps<"/livro/[slug]">) {
               <BookOpen className="h-3.5 w-3.5" strokeWidth={1.6} />
               Ler agora
             </Link>
-            <a href={`/api/arquivo/${book.fileKey}?download`} className="btn btn-ghost w-full">
-              <Download className="h-3.5 w-3.5" strokeWidth={1.6} />
-              Baixar · {formatBytes(book.fileSize)}
-            </a>
+            <DownloadButton
+              chave={book.fileKey}
+              rotulo={`Baixar · ${formatBytes(book.fileSize)}`}
+            />
             <ShareButton title={book.title} />
             {manage ? (
               <div className="flex flex-col gap-2 pt-2">

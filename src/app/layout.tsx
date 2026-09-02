@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter_Tight } from "next/font/google";
 import { LibrarianChat } from "@/components/librarian-chat";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { TrafficBanner } from "@/components/traffic-banner";
 import { siteOrigin } from "@/lib/site";
 import { assetOrigin } from "@/lib/storage";
 import "./globals.css";
@@ -61,6 +63,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </head>
       ) : null}
       <body className="grain flex min-h-full flex-col bg-ink text-bone">
+        <Suspense fallback={null}>
+          <TrafficBanner />
+        </Suspense>
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

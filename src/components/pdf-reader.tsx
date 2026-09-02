@@ -25,19 +25,27 @@ type Match = { page: number; count: number };
 
 export function PdfReader({
   fileUrl,
+  fileKey,
   title,
   subtitle,
   backHref,
+  onFalha,
 }: {
   fileUrl: string;
+  /** Chave do arquivo, usada para pedir vaga ao baixar de dentro do leitor. */
+  fileKey: string;
   title: string;
   subtitle: string;
   backHref: string;
+  /** Avisa quem cuida da fila que o armazenamento recusou a leitura. */
+  onFalha?: (erro: unknown) => void;
 }) {
+  const filaHref = `/fila?chave=${encodeURIComponent(fileKey)}&modo=baixar`;
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rendered = useRef<Set<number>>(new Set());
   const docRef = useRef<PDFDocumentProxy | null>(null);
+  const onFalhaRef = useRef(onFalha);
 
   const [total, setTotal] = useState(0);
   const [current, setCurrent] = useState(1);
@@ -54,6 +62,10 @@ export function PdfReader({
 
   const scale = ZOOMS[zoom];
 
+  useEffect(() => {
+    onFalhaRef.current = onFalha;
+  });
+
   // --- carregamento -------------------------------------------------------
   useEffect(() => {
     let cancelado = false;
@@ -61,13 +73,21 @@ export function PdfReader({
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-        const doc = await pdfjs.getDocument({ url: fileUrl }).promise;
+        const doc = await pdfjs.getDocument({
+          url: fileUrl,
+          // Pedaços grandes e nada de leitura adiantada: cada requisição ao
+          // bucket conta na cota diária do plano gratuito, então o leitor puxa
+          // só o que a pessoa abriu, em poucas viagens.
+          rangeChunkSize: 1 << 20,
+          disableAutoFetch: true,
+        }).promise;
         if (cancelado) return;
         docRef.current = doc;
         setTotal(doc.numPages);
         setLoading(false);
-      } catch {
+      } catch (erro) {
         if (!cancelado) {
+          onFalhaRef.current?.(erro);
           setErro("Não foi possível abrir este PDF.");
           setLoading(false);
         }
@@ -336,7 +356,7 @@ export function PdfReader({
             <Printer className="h-3.5 w-3.5" strokeWidth={1.6} />
           </a>
           <a
-            href={`${fileUrl}?download`}
+            href={filaHref}
             aria-label="Baixar"
             className="grid h-8 w-8 place-items-center border border-line text-muted transition-colors hover:border-white/45 hover:text-bone"
           >
@@ -398,7 +418,7 @@ export function PdfReader({
           <div className="grid h-full place-items-center px-6 text-center">
             <div>
               <p className="display text-2xl">{erro}</p>
-              <a href={`${fileUrl}?download`} className="btn btn-solid mt-5">
+              <a href={filaHref} className="btn btn-solid mt-5">
                 Baixar o arquivo
               </a>
             </div>

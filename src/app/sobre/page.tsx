@@ -17,7 +17,7 @@ const STEPS = [
   },
   {
     title: "A turma usa",
-    body: "Leitura no navegador ou download do arquivo original. Consultar não exige cadastro, e não há limite de banda por pessoa.",
+    body: "Leitura no navegador ou download do arquivo original. Consultar não exige cadastro; nos horários cheios o acervo forma fila para caber na cota diária do armazenamento.",
   },
 ];
 
