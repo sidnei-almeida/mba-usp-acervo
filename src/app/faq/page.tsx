@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import { SITE } from "@/lib/site";
+import { limits } from "@/lib/traffic/limits";
 
 export const metadata: Metadata = {
   title: "Perguntas frequentes",
@@ -39,13 +40,35 @@ const GROUPS: Group[] = [
       {
         q: "Existe limite de downloads?",
         a: (
+          <>
+            <p>
+              Existe, e ele é do acervo, não seu: o armazenamento roda no plano
+              gratuito do Backblaze B2, que libera cerca de 1 GB de tráfego por
+              dia. O Silo entrega {limits.concurrent} arquivos por vez e conta{" "}
+              {limits.perPerson} downloads por pessoa a cada dia, para o acervo
+              caber no dia de todo mundo. A cota vira à meia-noite (UTC).
+            </p>
+            <p className="mt-3">
+              O contador que aparece em cada ficha é outra coisa: o total
+              acumulado da obra, usado para montar o{" "}
+              <Link href="/populares" className="underline-grow text-bone">
+                ranking de mais baixados
+              </Link>
+              .
+            </p>
+          </>
+        ),
+      },
+      {
+        q: "Por que meu download entrou numa fila?",
+        a: (
           <p>
-            Não há cota por pessoa nem por dia. O contador que aparece em cada
-            ficha é apenas o total acumulado da obra, usado para montar o{" "}
-            <Link href="/populares" className="underline-grow text-bone">
-              ranking de mais baixados
-            </Link>
-            .
+            Porque outras pessoas estavam baixando no mesmo instante. Em vez de
+            derrubar o armazenamento e devolver um erro seco, o Silo põe o pedido
+            numa fila, mostra a sua posição e um relógio, e começa a transferência
+            sozinho quando chega a sua vez — basta deixar a página aberta. Se
+            aparecer um aviso de pausa, o armazenamento pediu calma: ele volta
+            sozinho, e a página tenta de novo quando o relógio zera.
           </p>
         ),
       },

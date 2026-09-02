@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { PdfReader } from "@/components/pdf-reader";
+import { ReaderGate } from "@/components/reader-gate";
 import { getBookBySlug } from "@/lib/catalog";
 import { KIND_LABEL } from "@/lib/types";
 
@@ -20,8 +20,8 @@ export default async function ReaderPage({ params }: PageProps<"/livro/[slug]/le
   if (!book) notFound();
 
   return (
-    <PdfReader
-      fileUrl={`/api/arquivo/${book.fileKey}`}
+    <ReaderGate
+      chave={book.fileKey}
       title={book.title}
       subtitle={`${KIND_LABEL[book.kind]} · ${book.authors.join(", ")}`}
       backHref={`/livro/${book.slug}`}
